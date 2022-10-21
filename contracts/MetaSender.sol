@@ -25,19 +25,23 @@ contract MetaSender {
         payable
     {
         require(_to.length < 255, "Max 244 transaction by batch");
+
         uint256 remainingValue = msg.value;
+
         require(
-            remainingValue >= _value * _to.length,
+            remainingValue >= _to.length * _value,
             "The value is less than required"
         );
+
         for (uint256 i = 0; i < _to.length; i++) {
             remainingValue -= _value;
             require(payable(_to[i]).send(_value), "Transaction not sended");
         }
+
         if (remainingValue > 0) payable(msg.sender).transfer(remainingValue);
     }
 
-    function transferBatchDifferenValueETH(
+    function transferBatchDifferentValueETH(
         address[] memory _to,
         uint256[] memory _value
     ) external payable {
@@ -45,16 +49,22 @@ contract MetaSender {
             _to.length == _value.length,
             "Addresses and values most be iqual"
         );
+
         require(_to.length < 255, "Max 244 transaction by batch");
+
         uint256 remainingValue = msg.value;
+
         require(
             remainingValue >= getTotalValue(_value),
             "The value is less than required"
         );
+
         for (uint256 i = 0; i < _value.length; i++) {
             remainingValue -= _value[i];
-            require(payable(_to[i]).send(_value[i]), "for");
+
+            require(payable(_to[i]).send(_value[i]), "Transaction not sended");
         }
+
         if (remainingValue > 0) payable(msg.sender).transfer(remainingValue);
     }
 }

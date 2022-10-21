@@ -10,10 +10,12 @@ describe("MetaSender", function () {
 	async function getExample(cuantity) {
 		const addresses = [];
 		const amounts = [];
+		const accounts = [];
 		const signers = await ethers.getSigners();
-		let sI = 0;
-		for (let i = 0; i <= cuantity; i++) {
-			if (sI == signers.length - 1) sI = 0;
+		let sI = 1;
+		for (let i = 1; i <= cuantity; i++) {
+			if (sI == signers.length - 1) sI = 1;
+			accounts.push(signers[sI]);
 			addresses.push(signers[sI].address);
 			amounts.push(
 				ethers.utils.parseEther(
@@ -22,7 +24,20 @@ describe("MetaSender", function () {
 			);
 			sI++;
 		}
-		return { addresses, amounts };
+		return { addresses, amounts, accounts };
+	}
+
+	async function getBalances(accounts) {
+		const balanaces = [];
+		for (const account of accounts) {
+			const BigNum = await account.getBalance();
+			balanaces.push(Number(ethers.utils.formatEther(BigNum)));
+		}
+		return balanaces;
+	}
+
+	function compareBalances(smaller, bigger) {
+		return smaller.every((e, i) => e < bigger[i]);
 	}
 
 	function getPrice(amounts) {
@@ -67,9 +82,47 @@ describe("MetaSender", function () {
 
 				const { addresses } = await getExample(25);
 
-				await metaSender.transferBatchSameValueETH(addresses, 1, {
+				const value = ethers.utils.parseEther("1.0");
+
+				await metaSender.transferBatchSameValueETH(addresses, value, {
 					value: ethers.utils.parseEther("25"),
 				});
+			});
+			it("verify the transactions", async () => {
+				const { metaSender } = await loadFixture(deployMetaSender);
+
+				const { addresses, accounts } = await getExample(2);
+
+				const value = ethers.utils.parseEther("1");
+
+				const prevBalances = await getBalances(accounts);
+
+				await metaSender.transferBatchSameValueETH(addresses, value, {
+					value: ethers.utils.parseEther("10"),
+				});
+
+				const postBalances = await getBalances(accounts);
+
+				expect(compareBalances(prevBalances, postBalances));
+			});
+			it("check if it returns the remaining value", async () => {
+				const { metaSender, owner } = await loadFixture(
+					deployMetaSender
+				);
+
+				const { addresses } = await getExample(2);
+
+				const [prevBalance] = await getBalances([owner]);
+
+				const value = ethers.utils.parseEther("1");
+
+				await metaSender.transferBatchSameValueETH(addresses, value, {
+					value: ethers.utils.parseEther("10"),
+				});
+
+				const [postBalance] = await getBalances([owner]);
+
+				expect(prevBalance - 10 < postBalance);
 			});
 		});
 	});
@@ -81,7 +134,7 @@ describe("MetaSender", function () {
 				const { addresses } = await getExample(25);
 
 				await expect(
-					metaSender.transferBatchDifferenValueETH(
+					metaSender.transferBatchDifferentValueETH(
 						addresses,
 						[1, 2],
 						{
@@ -95,7 +148,7 @@ describe("MetaSender", function () {
 				const { addresses, amounts } = await getExample(255);
 
 				await expect(
-					metaSender.transferBatchDifferenValueETH(
+					metaSender.transferBatchDifferentValueETH(
 						addresses,
 						amounts,
 						{
@@ -109,7 +162,7 @@ describe("MetaSender", function () {
 				const { addresses, amounts } = await getExample(25);
 
 				await expect(
-					metaSender.transferBatchDifferenValueETH(
+					metaSender.transferBatchDifferentValueETH(
 						addresses,
 						amounts,
 						{
@@ -125,11 +178,55 @@ describe("MetaSender", function () {
 
 				const { addresses, amounts } = await getExample(1);
 
-				await metaSender.transferBatchDifferenValueETH(
+				await metaSender.transferBatchDifferentValueETH(
 					addresses,
 					amounts,
 					{ value: getPrice(amounts) }
 				);
+			});
+			it("verify the transactions", async () => {
+				const { metaSender } = await loadFixture(deployMetaSender);
+
+				const { addresses, amounts, accounts } = await getExample(2);
+
+				const prevBalances = await getBalances(accounts);
+
+				await metaSender.transferBatchDifferentValueETH(
+					addresses,
+					amounts,
+					{
+						value: getPrice(amounts),
+					}
+				);
+
+				const postBalances = await getBalances(accounts);
+
+				expect(compareBalances(prevBalances, postBalances));
+			});
+			it("check if it returns the remaining value", async () => {
+				const { metaSender, owner } = await loadFixture(
+					deployMetaSender
+				);
+
+				const { addresses, amounts } = await getExample(2);
+
+				const [prevBalance] = await getBalances([owner]);
+
+				await metaSender.transferBatchDifferentValueETH(
+					addresses,
+					amounts,
+					{
+						value: getPrice(amounts).add(10),
+					}
+				);
+
+				const cost = ethers.utils.formatEther(
+					getPrice(amounts).add(10)
+				);
+
+				const [postBalance] = await getBalances([owner]);
+
+				expect(prevBalance - cost < postBalance);
 			});
 		});
 	});
