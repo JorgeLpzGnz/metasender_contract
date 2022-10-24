@@ -74,8 +74,76 @@ describe("MetaSender", function () {
 		return { metaSender, owner, anotherAcount, token20, token721, txFee, vipFee };
 	}
 
-	describe("transfer ETH from same value", () => {
+	describe("VIP List", () => {
+
 		describe("Errors", () => {
+
+			it("Should failed when try to add VIP and doesn't pass current VIP fee", async () => {
+
+				const { metaSender, anotherAcount, owner } = await loadFixture( deployMetaSender )
+
+				await expect( 
+
+					metaSender.addVIP(anotherAcount.address, { value: 0})
+
+				).to.be.revertedWith("Value must be equal or superior of current VIP fee")
+
+			})
+
+			it("Should failed when try to remove VIP and caller is not owner", async () => {
+
+				const { metaSender, anotherAcount, vipFee } = await loadFixture( deployMetaSender ) 
+
+				await metaSender.addVIP(anotherAcount.address, { value: vipFee})
+
+				expect( 
+
+					metaSender.connect(anotherAcount.address).removeVIP(anotherAcount.address)
+
+				).to.be.reverted
+
+			})
+
+		})
+
+		describe("functionalities", () => {
+
+			it("Should add a new VIP", async () => {
+
+				const { metaSender, anotherAcount, vipFee } = await loadFixture( deployMetaSender ) 
+
+				expect( ! await metaSender.VIP(anotherAcount.address) )
+
+				await metaSender.addVIP(anotherAcount.address, { value: vipFee})
+
+				expect( await metaSender.VIP(anotherAcount.address) )
+
+			})
+
+			it("Should remove a VIP", async () => {
+
+				const { metaSender, anotherAcount, vipFee } = await loadFixture( deployMetaSender ) 
+
+				expect( ! await metaSender.VIP(anotherAcount.address) )
+
+				await metaSender.addVIP(anotherAcount.address, { value: vipFee})
+
+				expect( await metaSender.VIP(anotherAcount.address) )
+
+				await metaSender.removeVIP(anotherAcount.address)
+
+				expect( ! await metaSender.VIP(anotherAcount.address) )
+
+			})
+
+		})
+
+	})
+
+	describe("transfer ETH from same value", () => {
+
+		describe("Errors", () => {
+
 			it("it should fail if is passed more than 254 wallets", async () => {
 				const { metaSender, txFee } = await loadFixture(deployMetaSender);
 
@@ -88,8 +156,11 @@ describe("MetaSender", function () {
 					})
 
 				).to.be.revertedWith("Max 244 transaction by batch");
+
 			});
+
 			it("it should fail if the passed value is less than needed", async () => {
+
 				const { metaSender } = await loadFixture(deployMetaSender);
 				const { addresses } = await getExample(25);
 
@@ -98,10 +169,15 @@ describe("MetaSender", function () {
 						value: ethers.utils.parseEther(`0`),
 					})
 				).to.be.revertedWith("The value is less than required");
+
 			});
+
 		});
+
 		describe("functionalities", () => {
+
 			it("Should transfer a batch of transactions with same value", async () => {
+
 				const { metaSender, txFee } = await loadFixture(deployMetaSender);
 
 				const { addresses } = await getExample(25);
@@ -111,8 +187,11 @@ describe("MetaSender", function () {
 				await metaSender.sendEthSameValue(addresses, value, {
 					value: ethers.utils.parseEther("25").add( txFee ),
 				});
+
 			});
+
 			it("verify the transactions", async () => {
+
 				const { metaSender, txFee } = await loadFixture(deployMetaSender);
 
 				const { addresses, accounts } = await getExample(2);
@@ -128,8 +207,11 @@ describe("MetaSender", function () {
 				const postBalances = await getBalances(accounts);
 
 				expect(compareBalances(prevBalances, postBalances));
+
 			});
+
 			it("check if it returns the remaining value", async () => {
+
 				const { metaSender, owner, txFee } = await loadFixture(
 					deployMetaSender
 				);
@@ -147,8 +229,11 @@ describe("MetaSender", function () {
 				const [postBalance] = await getBalances([owner]);
 
 				expect(prevBalance - 10 < postBalance);
+
 			});
+
 		});
+
 	});
 
 	describe("transfer ETH from different value", () => {
