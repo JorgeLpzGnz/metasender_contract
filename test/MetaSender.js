@@ -10,6 +10,7 @@ async function getExample(cuantity) {
 	const addresses = [];
 	const amounts = [];
 	const accounts = [];
+	const tokenIds = []
 	const signers = await ethers.getSigners();
 	let sI = 1;
 	for (let i = 1; i <= cuantity; i++) {
@@ -21,9 +22,10 @@ async function getExample(cuantity) {
 				`${Math.round(Math.random() * 50) / 50}`
 			)
 		);
+		tokenIds.push(i)
 		sI++;
 	}
-	return { addresses, amounts, accounts };
+	return { addresses, amounts, accounts, tokenIds };
 }
 
 async function getBalances(accounts) {
@@ -60,24 +62,31 @@ describe("MetaSender", function () {
 		const MetaSender = await ethers.getContractFactory("MetaSender");
 		const metaSender = await MetaSender.deploy();
 
+		const txFee = await metaSender.txFee() 
+		const vipFee = await metaSender.vipFee() 
+
 		const Token20 = await ethers.getContractFactory("Token20");
 		const token20 = await Token20.deploy();
 
 		const Token721 = await ethers.getContractFactory("Token721");
 		const token721 = await Token721.deploy();
 
-		return { metaSender, owner, anotherAcount, token20, token721 };
+		return { metaSender, owner, anotherAcount, token20, token721, txFee, vipFee };
 	}
 
 	describe("transfer ETH from same value", () => {
 		describe("Errors", () => {
 			it("it should fail if is passed more than 254 wallets", async () => {
-				const { metaSender } = await loadFixture(deployMetaSender);
+				const { metaSender, txFee } = await loadFixture(deployMetaSender);
+
 				const { addresses } = await getExample(255)
+
 				await expect(
+
 					metaSender.sendEthSameValue(addresses, 10, {
-						value: ethers.utils.parseEther(`2550`),
+						value: ethers.utils.parseEther(`2550`).add( txFee ),
 					})
+
 				).to.be.revertedWith("Max 244 transaction by batch");
 			});
 			it("it should fail if the passed value is less than needed", async () => {
@@ -93,18 +102,18 @@ describe("MetaSender", function () {
 		});
 		describe("functionalities", () => {
 			it("Should transfer a batch of transactions with same value", async () => {
-				const { metaSender } = await loadFixture(deployMetaSender);
+				const { metaSender, txFee } = await loadFixture(deployMetaSender);
 
 				const { addresses } = await getExample(25);
 
 				const value = ethers.utils.parseEther("1.0");
 
 				await metaSender.sendEthSameValue(addresses, value, {
-					value: ethers.utils.parseEther("25"),
+					value: ethers.utils.parseEther("25").add( txFee ),
 				});
 			});
 			it("verify the transactions", async () => {
-				const { metaSender } = await loadFixture(deployMetaSender);
+				const { metaSender, txFee } = await loadFixture(deployMetaSender);
 
 				const { addresses, accounts } = await getExample(2);
 
@@ -113,7 +122,7 @@ describe("MetaSender", function () {
 				const prevBalances = await getBalances(accounts);
 
 				await metaSender.sendEthSameValue(addresses, value, {
-					value: ethers.utils.parseEther("10"),
+					value: ethers.utils.parseEther("10").add( txFee ),
 				});
 
 				const postBalances = await getBalances(accounts);
@@ -121,7 +130,7 @@ describe("MetaSender", function () {
 				expect(compareBalances(prevBalances, postBalances));
 			});
 			it("check if it returns the remaining value", async () => {
-				const { metaSender, owner } = await loadFixture(
+				const { metaSender, owner, txFee } = await loadFixture(
 					deployMetaSender
 				);
 
@@ -132,7 +141,7 @@ describe("MetaSender", function () {
 				const value = ethers.utils.parseEther("1");
 
 				await metaSender.sendEthSameValue(addresses, value, {
-					value: ethers.utils.parseEther("10"),
+					value: ethers.utils.parseEther("10").add( txFee ),
 				});
 
 				const [postBalance] = await getBalances([owner]);
@@ -145,7 +154,7 @@ describe("MetaSender", function () {
 	describe("transfer ETH from different value", () => {
 		describe("Errors", () => {
 			it("it should fail if number of accounts is different of amounts", async () => {
-				const { metaSender } = await loadFixture(deployMetaSender);
+				const { metaSender, txFee } = await loadFixture(deployMetaSender);
 				const { addresses } = await getExample(25);
 
 				await expect(
@@ -153,13 +162,13 @@ describe("MetaSender", function () {
 						addresses,
 						[1, 2],
 						{
-							value: ethers.utils.parseEther(`2`),
+							value: ethers.utils.parseEther(`2`).add( txFee ),
 						}
 					)
 				).to.be.revertedWith("Addresses and values most be iqual");
 			});
 			it("it should fail if is passed more than 254 wallets", async () => {
-				const { metaSender } = await loadFixture(deployMetaSender);
+				const { metaSender, txFee } = await loadFixture(deployMetaSender);
 				const { addresses, amounts } = await getExample(255);
 
 				await expect(
@@ -167,7 +176,7 @@ describe("MetaSender", function () {
 						addresses,
 						amounts,
 						{
-							value: getPrice(amounts),
+							value: getPrice(amounts).add( txFee ),
 						}
 					)
 				).to.be.revertedWith("Max 244 transaction by batch");
@@ -189,18 +198,18 @@ describe("MetaSender", function () {
 		});
 		describe("functionalities", () => {
 			it("Should transfer a batch of transactions with different value", async () => {
-				const { metaSender } = await loadFixture(deployMetaSender);
+				const { metaSender, txFee } = await loadFixture(deployMetaSender);
 
 				const { addresses, amounts } = await getExample(1);
 
 				await metaSender.sendEthDifferentValue(
 					addresses,
 					amounts,
-					{ value: getPrice(amounts) }
+					{ value: getPrice(amounts).add( txFee ) }
 				);
 			});
 			it("verify the transactions", async () => {
-				const { metaSender } = await loadFixture(deployMetaSender);
+				const { metaSender, txFee } = await loadFixture(deployMetaSender);
 
 				const { addresses, amounts, accounts } = await getExample(2);
 
@@ -210,7 +219,7 @@ describe("MetaSender", function () {
 					addresses,
 					amounts,
 					{
-						value: getPrice(amounts),
+						value: getPrice(amounts).add( txFee ),
 					}
 				);
 
@@ -219,7 +228,7 @@ describe("MetaSender", function () {
 				expect(compareBalances(prevBalances, postBalances));
 			});
 			it("check if it returns the remaining value", async () => {
-				const { metaSender, owner } = await loadFixture(
+				const { metaSender, owner, txFee } = await loadFixture(
 					deployMetaSender
 				);
 
@@ -231,7 +240,7 @@ describe("MetaSender", function () {
 					addresses,
 					amounts,
 					{
-						value: getPrice(amounts).add(10),
+						value: getPrice(amounts).add( 10 + txFee ),
 					}
 				);
 
@@ -252,7 +261,7 @@ describe("MetaSender", function () {
 
 			it("should failed if pass more than 254 transactions", async() => {
 
-				const { metaSender, token20 } = await loadFixture( deployMetaSender )
+				const { metaSender, token20, txFee } = await loadFixture( deployMetaSender )
 
 				const { addresses } = await getExample(255)
 
@@ -261,17 +270,34 @@ describe("MetaSender", function () {
 				await expect( metaSender.sendIERC20SameValue(
 					token20.address,
 					addresses,
-					ethers.utils.parseEther('1')
+					ethers.utils.parseEther('1').add( txFee )
 				)).to.be.revertedWith("Max 244 transaction by batch")
 
 			})
 
+			it("should failed if doesn't pass txfee", async() => {
+
+				const { metaSender, token20 } = await loadFixture( deployMetaSender )
+
+				const { addresses } = await getExample(254)
+
+				await token20.approve(metaSender.address, ethers.utils.parseEther('255'))
+
+				await expect( metaSender.sendIERC20SameValue(
+					token20.address,
+					addresses,
+					ethers.utils.parseEther('1')
+				)).to.be.revertedWith("The value is less than required")
+
+			})
+
 		})
+
 		describe("functinalities", () => {
 
 			it("should send ERC20 tokens", async() => {
 
-				const { metaSender, token20, owner } = await loadFixture( deployMetaSender )
+				const { metaSender, token20, txFee } = await loadFixture( deployMetaSender )
 
 				const { addresses } = await getExample(200)
 
@@ -280,16 +306,17 @@ describe("MetaSender", function () {
 				expect( await metaSender.sendIERC20SameValue(
 					token20.address,
 					addresses,
-					ethers.utils.parseEther('1')
+					ethers.utils.parseEther('1'), 
+					{ value: txFee }
 				))
 
 			})
 
 			it("verify transactions", async() => {
 
-				const { metaSender, token20, owner } = await loadFixture( deployMetaSender )
+				const { metaSender, token20, txFee  } = await loadFixture( deployMetaSender )
 
-				const { addresses, accounts } = await getExample(100)
+				const { addresses } = await getExample(100)
 
 				await token20.approve(metaSender.address, ethers.utils.parseEther('244'))
 
@@ -298,7 +325,8 @@ describe("MetaSender", function () {
 				expect( await metaSender.sendIERC20SameValue(
 					token20.address,
 					addresses,
-					ethers.utils.parseEther('1')
+					ethers.utils.parseEther('1'), 
+					{ value: txFee }
 				))
 
 				const currBalance = await getTokenBalance( token20, addresses)
@@ -316,7 +344,7 @@ describe("MetaSender", function () {
 
 			it("should failed if pass more than 254 transactions", async() => {
 
-				const { metaSender, token20 } = await loadFixture( deployMetaSender )
+				const { metaSender, token20, txFee } = await loadFixture( deployMetaSender )
 
 				const { addresses, amounts } = await getExample(255)
 
@@ -325,8 +353,25 @@ describe("MetaSender", function () {
 				await expect( metaSender.sendIERC20DifferentValue(
 					token20.address,
 					addresses,
-					amounts
+					amounts, 
+					{ value: txFee }
 				)).to.be.revertedWith("Max 244 transaction by batch")
+
+			})
+
+			it("should failed if doesn't pass txfee", async() => {
+
+				const { metaSender, token20, txFee } = await loadFixture( deployMetaSender )
+
+				const { addresses, amounts } = await getExample(254)
+
+				await token20.approve(metaSender.address, ethers.utils.parseEther('400'))
+				
+				await expect( metaSender.sendIERC20DifferentValue(
+					token20.address,
+					addresses,
+					amounts
+				)).to.be.revertedWith("The value is less than required")
 
 			})
 
@@ -336,7 +381,7 @@ describe("MetaSender", function () {
 
 			it("should send ERC20 tokens", async() => {
 
-				const { metaSender, token20 } = await loadFixture( deployMetaSender )
+				const { metaSender, token20, txFee } = await loadFixture( deployMetaSender )
 
 				const { addresses, amounts } = await getExample(254)
 
@@ -345,14 +390,15 @@ describe("MetaSender", function () {
 				expect( await metaSender.sendIERC20DifferentValue(
 					token20.address,
 					addresses,
-					amounts
+					amounts, 
+					{ value: txFee }
 				))
 
 			})
 
 			it("verify transactions", async() => {
 
-				const { metaSender, token20 } = await loadFixture( deployMetaSender )
+				const { metaSender, token20, txFee } = await loadFixture( deployMetaSender )
 
 				const { addresses, amounts } = await getExample(100)
 
@@ -363,7 +409,8 @@ describe("MetaSender", function () {
 				expect( await metaSender.sendIERC20DifferentValue(
 					token20.address,
 					addresses,
-					amounts
+					amounts, 
+					{ value: txFee }
 				))
 
 				const currBalance = await getTokenBalance( token20, addresses)
@@ -381,130 +428,91 @@ describe("MetaSender", function () {
 
 			it("should failed if pass more than 254 transactions", async() => {
 
-				const { metaSender, token721 } = await loadFixture( deployMetaSender )
+				const { metaSender, token721, txFee } = await loadFixture( deployMetaSender )
 
-				const { addresses } = await getExample(255)
+				const { addresses, tokenIds } = await getExample(255)
 
 				await token721.mintToken721(255)
 
-				await token721.approve(metaSender.address, ethers.utils.parseEther('255'))
+				await token721.setApprovalForAll(metaSender.address, true)
 
-				await expect( metaSender.sendIERC20SameValue(
+				await expect( metaSender.sendIERC721(
 					token721.address,
 					addresses,
-					1
+					tokenIds, 
+					{ value: txFee }
 				)).to.be.revertedWith("Max 244 transaction by batch")
+
+			})
+
+			it("should failed if doesn't pass txfee", async() => {
+
+				const { metaSender, token721, txFee } = await loadFixture( deployMetaSender )
+
+				const { addresses, tokenIds } = await getExample(254)
+
+				await token721.mintToken721(254)
+
+				await token721.setApprovalForAll(metaSender.address, true)
+
+				await expect( metaSender.sendIERC721(
+					token721.address,
+					addresses,
+					tokenIds
+				)).to.be.revertedWith("The value is less than required")
 
 			})
 
 		})
 
-		// describe("functinalities", () => {
+		describe("functinalities", () => {
 
-		// 	it("should send ERC20 tokens", async() => {
+			it("should send ERC721 tokens", async() => {
 
-		// 		const { metaSender, token721, owner } = await loadFixture( deployMetaSender )
+				const { metaSender, token721, txFee } = await loadFixture( deployMetaSender )
 
-		// 		const { addresses } = await getExample(200)
+				const { addresses, tokenIds } = await getExample(254)
 
-		// 		await token20.approve(metaSender.address, ethers.utils.parseEther('200'))
+				await token721.mintToken721(254)
 
-		// 		expect( await metaSender.sendIERC20SameValue(
-		// 			token20.address,
-		// 			addresses,
-		// 			ethers.utils.parseEther('1')
-		// 		))
+				await token721.setApprovalForAll(metaSender.address, true)
 
-		// 	})
+				expect( await metaSender.sendIERC721(
+					token721.address,
+					addresses,
+					tokenIds, 
+					{ value: txFee }
+				))
 
-		// 	it("verify transactions", async() => {
+			})
 
-		// 		const { metaSender, token20, owner } = await loadFixture( deployMetaSender )
+			it("verify transactions", async() => {
 
-		// 		const { addresses, accounts } = await getExample(100)
+				const { metaSender, token721, txFee } = await loadFixture( deployMetaSender )
 
-		// 		await token20.approve(metaSender.address, ethers.utils.parseEther('244'))
+				const { addresses, tokenIds } = await getExample(254)
 
-		// 		const prevBalance = await getTokenBalance( token20, addresses)
+				await token721.mintToken721(254)
 
-		// 		expect( await metaSender.sendIERC20SameValue(
-		// 			token20.address,
-		// 			addresses,
-		// 			ethers.utils.parseEther('1')
-		// 		))
+				await token721.setApprovalForAll(metaSender.address, true)
 
-		// 		const currBalance = await getTokenBalance( token20, addresses)
+				const prevBalance = await getTokenBalance( token721, addresses)
 
-		// 		expect(compareBalances(prevBalance, currBalance))
+				expect( await metaSender.sendIERC721(
+					token721.address,
+					addresses,
+					tokenIds, 
+					{ value: txFee }
+				))
 
-		// 	})
-		// })
+				const currBalance = await getTokenBalance( token721, addresses)
+
+				expect(compareBalances(prevBalance, currBalance))
+
+			})
+
+		})
 		
 	})
-
-	// describe("transfer ERC721 from different value", () => {
-
-	// 	describe("Errors", () => {
-
-	// 		it("should failed if pass more than 254 transactions", async() => {
-
-	// 			const { metaSender, token20 } = await loadFixture( deployMetaSender )
-
-	// 			const { addresses, amounts } = await getExample(255)
-
-	// 			await token20.approve(metaSender.address, ethers.utils.parseEther('400'))
-				
-	// 			await expect( metaSender.sendIERC20DifferentValue(
-	// 				token20.address,
-	// 				addresses,
-	// 				amounts
-	// 			)).to.be.revertedWith("Max 244 transaction by batch")
-
-	// 		})
-
-	// 	})
-
-	// 	describe("functinalities", () => {
-
-	// 		it("should send ERC20 tokens", async() => {
-
-	// 			const { metaSender, token20 } = await loadFixture( deployMetaSender )
-
-	// 			const { addresses, amounts } = await getExample(254)
-
-	// 			await token20.approve(metaSender.address, ethers.utils.parseEther('400'))
-				
-	// 			expect( await metaSender.sendIERC20DifferentValue(
-	// 				token20.address,
-	// 				addresses,
-	// 				amounts
-	// 			))
-
-	// 		})
-
-	// 		it("verify transactions", async() => {
-
-	// 			const { metaSender, token20 } = await loadFixture( deployMetaSender )
-
-	// 			const { addresses, amounts } = await getExample(100)
-
-	// 			await token20.approve(metaSender.address, ethers.utils.parseEther('400'))
-
-	// 			const prevBalance = await getTokenBalance( token20, addresses)
-
-	// 			expect( await metaSender.sendIERC20DifferentValue(
-	// 				token20.address,
-	// 				addresses,
-	// 				amounts
-	// 			))
-
-	// 			const currBalance = await getTokenBalance( token20, addresses)
-
-	// 			expect(compareBalances(prevBalance, currBalance))
-
-	// 		})
-	// 	})
-		
-	// })
 
 });

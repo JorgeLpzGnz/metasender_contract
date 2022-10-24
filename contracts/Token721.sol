@@ -75,8 +75,6 @@ contract Token721 is ERC721, Ownable {
 
     function mintToken721(uint256 _nftsAmount) external {
 
-        console.log(tokenIdCounter.current());
-
         for(uint256 i; i < _nftsAmount; i++){
             
             require( tokenIdCounter.current() <= totalSupply, 'Sold Out');
