@@ -72,7 +72,9 @@ contract MetaSender is Ownable {
     //// @param _address the address of the new VIP Member
     function addVIP( address _address) external payable {
 
-        require(msg.value >= vipFee, "Can't change: Value must be equal or superior of current VIP fee");
+        require(msg.value >= vipFee, "Can't add: Value must be equal or superior of current VIP fee");
+
+        require( !VIP[_address] , "Can't add: The address is already and VIP member");
 
         VIP[_address] = true;
 
@@ -86,7 +88,7 @@ contract MetaSender is Ownable {
 
         require( VIP[_address], "Can't Delete: User not exist");
 
-        VIP[_address] = false;
+        delete VIP[_address];
 
         emit RemoveVIP( _address );
         

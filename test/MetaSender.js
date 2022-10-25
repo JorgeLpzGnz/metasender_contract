@@ -86,7 +86,21 @@ describe("MetaSender", function () {
 
 					metaSender.addVIP(anotherAccount.address, { value: 0})
 
-				).to.be.revertedWith("Can't change: Value must be equal or superior of current VIP fee")
+				).to.be.revertedWith("Can't add: Value must be equal or superior of current VIP fee")
+
+			})
+
+			it("Should failed when try to add VIP and user alrady exist", async () => {
+
+				const { metaSender, anotherAccount, owner, vipFee } = await loadFixture( deployMetaSender )
+
+				await metaSender.addVIP(anotherAccount.address, { value: vipFee})
+
+				await expect( 
+
+					metaSender.addVIP(anotherAccount.address, { value: vipFee})
+
+				).to.be.revertedWith("Can't add: The address is already and VIP member")
 
 			})
 
