@@ -6,14 +6,14 @@ const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-async function getExample(cuantity) {
+async function getExample(quantity) {
 	const addresses = [];
 	const amounts = [];
 	const accounts = [];
 	const tokenIds = []
 	const signers = await ethers.getSigners();
 	let sI = 1;
-	for (let i = 1; i <= cuantity; i++) {
+	for (let i = 1; i <= quantity; i++) {
 		if (sI == signers.length - 1) sI = 1;
 		accounts.push(signers[sI]);
 		addresses.push(signers[sI].address);
@@ -29,21 +29,21 @@ async function getExample(cuantity) {
 }
 
 async function getBalances(accounts) {
-	const balanaces = [];
+	const balances = [];
 	for (const account of accounts) {
 		const BigNum = await account.getBalance();
-		balanaces.push(Number(ethers.utils.formatEther(BigNum)));
+		balances.push(Number(ethers.utils.formatEther(BigNum)));
 	}
-	return balanaces;
+	return balances;
 }
 
 async function getTokenBalance( contract, accounts ){
-	const balanaces = [];
+	const balances = [];
 	for (const account of accounts) {
 		const BigNum = await contract.balanceOf(account);
-		balanaces.push(Number(ethers.utils.formatEther(BigNum)));
+		balances.push(Number(ethers.utils.formatEther(BigNum)));
 	}
-	return balanaces;
+	return balances;
 }
 
 function compareBalances(smaller, bigger) {
@@ -57,7 +57,7 @@ function getPrice(amounts) {
 describe("MetaSender", function () {
 
 	async function deployMetaSender() {
-		const [owner, anotherAcount] = await ethers.getSigners();
+		const [owner, anotherAccount] = await ethers.getSigners();
 
 		const MetaSender = await ethers.getContractFactory("MetaSender");
 		const metaSender = await MetaSender.deploy();
@@ -71,7 +71,7 @@ describe("MetaSender", function () {
 		const Token721 = await ethers.getContractFactory("Token721");
 		const token721 = await Token721.deploy();
 
-		return { metaSender, owner, anotherAcount, token20, token721, txFee, vipFee };
+		return { metaSender, owner, anotherAccount, token20, token721, txFee, vipFee };
 	}
 
 	describe("VIP List", () => {
@@ -80,25 +80,25 @@ describe("MetaSender", function () {
 
 			it("Should failed when try to add VIP and doesn't pass current VIP fee", async () => {
 
-				const { metaSender, anotherAcount, owner } = await loadFixture( deployMetaSender )
+				const { metaSender, anotherAccount, owner } = await loadFixture( deployMetaSender )
 
 				await expect( 
 
-					metaSender.addVIP(anotherAcount.address, { value: 0})
+					metaSender.addVIP(anotherAccount.address, { value: 0})
 
-				).to.be.revertedWith("Value must be equal or superior of current VIP fee")
+				).to.be.revertedWith("Can't change: Value must be equal or superior of current VIP fee")
 
 			})
 
 			it("Should failed when try to remove VIP and caller is not owner", async () => {
 
-				const { metaSender, anotherAcount, vipFee } = await loadFixture( deployMetaSender ) 
+				const { metaSender, anotherAccount, vipFee } = await loadFixture( deployMetaSender ) 
 
-				await metaSender.addVIP(anotherAcount.address, { value: vipFee})
+				await metaSender.addVIP(anotherAccount.address, { value: vipFee})
 
 				expect( 
 
-					metaSender.connect(anotherAcount.address).removeVIP(anotherAcount.address)
+					metaSender.connect(anotherAccount.address).removeVIP(anotherAccount.address)
 
 				).to.be.reverted
 
@@ -110,35 +110,35 @@ describe("MetaSender", function () {
 
 			it("Should add a new VIP", async () => {
 
-				const { metaSender, anotherAcount, vipFee } = await loadFixture( deployMetaSender ) 
+				const { metaSender, anotherAccount, vipFee } = await loadFixture( deployMetaSender ) 
 
-				expect( ! await metaSender.VIP(anotherAcount.address) )
+				expect( ! await metaSender.VIP(anotherAccount.address) )
 
-				await metaSender.addVIP(anotherAcount.address, { value: vipFee})
+				await metaSender.addVIP(anotherAccount.address, { value: vipFee})
 
-				expect( await metaSender.VIP(anotherAcount.address) )
+				expect( await metaSender.VIP(anotherAccount.address) )
 
 			})
 
 			it("Should remove a VIP", async () => {
 
-				const { metaSender, anotherAcount, vipFee } = await loadFixture( deployMetaSender ) 
+				const { metaSender, anotherAccount, vipFee } = await loadFixture( deployMetaSender ) 
 
-				expect( ! await metaSender.VIP(anotherAcount.address) )
+				expect( ! await metaSender.VIP(anotherAccount.address) )
 
-				await metaSender.addVIP(anotherAcount.address, { value: vipFee})
+				await metaSender.addVIP(anotherAccount.address, { value: vipFee})
 
-				expect( await metaSender.VIP(anotherAcount.address) )
+				expect( await metaSender.VIP(anotherAccount.address) )
 
-				await metaSender.removeVIP(anotherAcount.address)
+				await metaSender.removeVIP(anotherAccount.address)
 
-				expect( ! await metaSender.VIP(anotherAcount.address) )
+				expect( ! await metaSender.VIP(anotherAccount.address) )
 
 			})
 
 			it("should not charge the transaction fee for a VIP", async () => {
 
-				const { metaSender, token20, token721, anotherAcount, vipFee, owner } = await loadFixture(deployMetaSender);
+				const { metaSender, token20, token721, anotherAccount, vipFee, owner } = await loadFixture(deployMetaSender);
 
 				const { addresses, amounts, tokenIds } = await getExample(25);
 
@@ -146,19 +146,19 @@ describe("MetaSender", function () {
 
 				const value = ethers.utils.parseEther("1.0");
 
-				await token721.connect(anotherAcount).mintToken721(25)
+				await token721.connect(anotherAccount).mintToken721(25)
 
-				await token721.connect(anotherAcount).setApprovalForAll(metaSender.address, true)
+				await token721.connect(anotherAccount).setApprovalForAll(metaSender.address, true)
 
-				await metaSender.connect(anotherAcount).addVIP( anotherAcount.address, { value: vipFee } )
+				await metaSender.connect(anotherAccount).addVIP( anotherAccount.address, { value: vipFee } )
 
 				await metaSender.addVIP( owner.address, { value: vipFee } )
 
-				expect( await metaSender.connect(anotherAcount).sendEthSameValue(addresses, value, {
+				expect( await metaSender.connect(anotherAccount).sendEthSameValue(addresses, value, {
 					value: ethers.utils.parseEther("25"),
 				}))
 
-				expect( await metaSender.connect(anotherAcount).sendEthDifferentValue(
+				expect( await metaSender.connect(anotherAccount).sendEthDifferentValue(
 					addresses,
 					amounts,
 					{ value: getPrice(amounts)}
@@ -176,7 +176,7 @@ describe("MetaSender", function () {
 					amounts
 				))
 
-				expect( await metaSender.connect(anotherAcount).sendIERC721(
+				expect( await metaSender.connect(anotherAccount).sendIERC721(
 					token721.address,
 					addresses,
 					tokenIds
@@ -305,7 +305,7 @@ describe("MetaSender", function () {
 							value: ethers.utils.parseEther(`2`).add( txFee ),
 						}
 					)
-				).to.be.revertedWith("Addresses and values most be iqual");
+				).to.be.revertedWith("Addresses and values most be equal");
 			});
 
 			it("it should fail if is passed more than 254 wallets", async () => {
@@ -439,7 +439,7 @@ describe("MetaSender", function () {
 
 		})
 
-		describe("functinalities", () => {
+		describe("functionalities", () => {
 
 			it("should send ERC20 tokens", async() => {
 
@@ -523,7 +523,7 @@ describe("MetaSender", function () {
 
 		})
 
-		describe("functinalities", () => {
+		describe("functionalities", () => {
 
 			it("should send ERC20 tokens", async() => {
 
@@ -611,7 +611,7 @@ describe("MetaSender", function () {
 
 		})
 
-		describe("functinalities", () => {
+		describe("functionalities", () => {
 
 			it("should send ERC721 tokens", async() => {
 
@@ -705,11 +705,11 @@ describe("MetaSender", function () {
 
 			it("Should failed when try to change txFee and caller is not owner", async () => {
 
-				const { metaSender, anotherAcount } = await loadFixture( deployMetaSender ) 
+				const { metaSender, anotherAccount } = await loadFixture( deployMetaSender ) 
 
 				await expect( 
 
-					metaSender.connect(anotherAcount).setTxFee( 0 )
+					metaSender.connect(anotherAccount).setTxFee( 0 )
 
 				).to.be.reverted
 
@@ -717,11 +717,11 @@ describe("MetaSender", function () {
 
 			it("Should failed when try to change VIP fee and caller is not owner", async () => {
 
-				const { metaSender, anotherAcount } = await loadFixture( deployMetaSender ) 
+				const { metaSender, anotherAccount } = await loadFixture( deployMetaSender ) 
 
 				await expect( 
 
-					metaSender.connect(anotherAcount).setVIPFee( 0 )
+					metaSender.connect(anotherAccount).setVIPFee( 0 )
 
 				).to.be.reverted
 
@@ -769,11 +769,11 @@ describe("MetaSender", function () {
 
 			it("Should failed when try to withdraw txFee and caller is not owner", async () => {
 
-				const { metaSender, anotherAcount  } = await loadFixture(deployMetaSender);
+				const { metaSender, anotherAccount  } = await loadFixture(deployMetaSender);
 
 				await expect( 
 
-					metaSender.connect(anotherAcount).withdrawTxFee( ethers.constants.AddressZero )
+					metaSender.connect(anotherAccount).withdrawTxFee( ethers.constants.AddressZero )
 
 				).to.be.reverted
 
@@ -787,7 +787,7 @@ describe("MetaSender", function () {
 
 					metaSender.withdrawTxFee( ethers.constants.AddressZero ) 
 
-				).to.be.revertedWith('Can not transfer: insuficent founds')
+				).to.be.revertedWith("Can't withDraw: insufficient founds")
 
 			})
 
@@ -797,7 +797,7 @@ describe("MetaSender", function () {
 
 			it("should withdraw contract founds", async () => {
 
-				const { metaSender, txFee, anotherAcount, vipFee, owner } = await loadFixture(deployMetaSender);
+				const { metaSender, txFee, anotherAccount, vipFee, owner } = await loadFixture(deployMetaSender);
 
 				const { addresses } = await getExample(25);
 
@@ -807,7 +807,7 @@ describe("MetaSender", function () {
 					value: ethers.utils.parseEther("25").add( txFee ),
 				})
 
-				await metaSender.addVIP(anotherAcount.address, { value: vipFee })
+				await metaSender.addVIP(anotherAccount.address, { value: vipFee })
 
 				const prevBalance = await getBalances([owner])
 
@@ -821,7 +821,7 @@ describe("MetaSender", function () {
 
 			it("should withdraw contract founds and erc20", async () => {
 
-				const { metaSender, txFee, anotherAcount, vipFee, owner, token20 } = await loadFixture(deployMetaSender);
+				const { metaSender, txFee, anotherAccount, vipFee, owner, token20 } = await loadFixture(deployMetaSender);
 
 				const { addresses } = await getExample(25);
 
@@ -841,7 +841,7 @@ describe("MetaSender", function () {
 
 				})
 
-				await metaSender.addVIP(anotherAcount.address, { value: vipFee })
+				await metaSender.addVIP(anotherAccount.address, { value: vipFee })
 
 				const prevBalance = await getBalances([owner])
 
@@ -874,6 +874,207 @@ describe("MetaSender", function () {
 				const erc20currBalance = token20.balanceOf(owner.address)
 
 				expect( erc20currBalance > 0 )
+
+			})
+
+		})
+
+	})
+
+	describe("Events", () => {
+
+		describe("functionalities", () => {
+
+			it("NewVIP", async () => {
+
+				const { metaSender, anotherAccount, vipFee } = await loadFixture(deployMetaSender);
+
+				expect( 
+
+					await metaSender.addVIP(anotherAccount.address, { value: vipFee })
+
+				).to.emit( anotherAccount.address )
+
+			})
+
+			it("RemoveVIP", async () => {
+
+				const { metaSender, anotherAccount, vipFee } = await loadFixture(deployMetaSender);
+
+				await metaSender.addVIP(anotherAccount.address, { value: vipFee })
+
+				expect( metaSender.VIP( anotherAccount.address ) )
+
+				expect( 
+
+					await metaSender.removeVIP(anotherAccount.address, { value: vipFee })
+
+				).to.emit( anotherAccount.address )
+			})
+
+			it("SetVIPFee", async () => {
+
+				const { metaSender } = await loadFixture(deployMetaSender);
+
+				const newValue = ethers.utils.parseEther('2') 
+
+				expect( 
+
+					await metaSender.setVIPFee( newValue )
+
+				).to.emit( newValue  )
+
+			})
+
+			it("SetTxFee", async () => {
+
+				const { metaSender } = await loadFixture(deployMetaSender);
+
+				const newValue = ethers.utils.parseEther('0.1') 
+
+				expect( 
+
+					await metaSender.setTxFee( newValue )
+
+				).to.emit( newValue  )
+
+			})
+
+			it("LogETHBulkTransfer", async () => {
+
+				const { metaSender, txFee, owner } = await loadFixture(deployMetaSender);
+
+				const { addresses, amounts } = await getExample(25);
+
+				const value = ethers.utils.parseEther("1.0");
+
+				expect( 
+
+					await metaSender.sendEthSameValue(
+						addresses, 
+						value, 
+						{ value: ethers.utils.parseEther("25").add( txFee ) }
+					)
+
+				).to.emit( owner.address,  ethers.utils.parseEther("25") )
+
+
+				expect( 
+
+					await metaSender.sendEthDifferentValue(
+						addresses,
+						amounts,
+						{ value: getPrice(amounts).add( txFee ) }
+					)
+
+				).to.emit( owner.address,  getPrice(amounts) )
+
+			})
+
+			it("LogTokenBulkTransfer", async () => {
+
+				const { metaSender, txFee, token20, token721 } = await loadFixture(deployMetaSender);
+
+				const { addresses, amounts, tokenIds } = await getExample(100);
+
+				await token20.approve(metaSender.address, ethers.utils.parseEther('1000000'))
+
+				await token721.mintToken721(254)
+
+				await token721.setApprovalForAll(metaSender.address, true)
+
+				expect( 
+
+					await metaSender.sendIERC20SameValue(
+						token20.address,
+						addresses,
+						ethers.utils.parseEther('1'), 
+						{ value: txFee }
+					)
+
+				).to.emit( token20.address,  ethers.utils.parseEther('1').mul(100) )
+
+				expect( 
+
+					await metaSender.sendIERC20DifferentValue(
+						token20.address,
+						addresses,
+						amounts, 
+						{ value: txFee }
+					)
+
+				).to.emit( token20.address,  getPrice(amounts))
+
+				expect( await metaSender.sendIERC721(
+					token721.address,
+					addresses,
+					tokenIds, 
+					{ value: txFee }
+				)).to.emit( token20.address,  tokenIds.length )
+
+			})
+
+			it("WithDrawIRC20", async () => {
+
+				const { metaSender, token20, owner } = await loadFixture(deployMetaSender);
+
+				const supply = await token20.totalSupply()
+
+				await token20.transfer(metaSender.address, supply)
+
+				const prevBalance = await token20.balanceOf(owner.address)
+
+				expect( prevBalance == 0)
+
+				expect( 
+
+					await metaSender.withDrawIRC20(token20.address)
+
+				).to.emit( token20.address,  supply )
+
+				expect( prevBalance == supply)
+
+			})
+
+			it("WithdrawTxFee", async () => {
+
+				const { metaSender, token20, owner, txFee, vipFee, anotherAccount } = await loadFixture(deployMetaSender);
+
+				const { addresses } = await getExample(25);
+
+				const value = ethers.utils.parseEther("1.0");
+
+				await metaSender.sendEthSameValue(addresses, value, {
+
+					value: ethers.utils.parseEther("25").add( txFee ),
+
+				})
+
+				await metaSender.addVIP(anotherAccount.address, { value: vipFee })
+
+				const supply = await token20.totalSupply()
+
+				await token20.transfer(metaSender.address, supply)
+
+				const prevERC20Balance = await token20.balanceOf(owner.address)
+
+				const [ prevBalance ] = await getBalances([owner])
+
+				expect( prevERC20Balance == 0)
+
+				expect( 
+
+					await metaSender.withdrawTxFee(token20.address)
+
+				).to.emit( owner.address,  supply )
+
+				const currERC20Balance = await token20.balanceOf(owner.address)
+
+				const [ currBalance ] = await getBalances([owner])
+
+				expect( currERC20Balance == supply)
+
+				expect( prevBalance < currBalance)
 
 			})
 

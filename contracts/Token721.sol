@@ -39,7 +39,7 @@ contract Token721 is ERC721, Ownable {
 
     function addToWhiteList ( address _address ) external onlyOwner {
 
-        require( !whiteList[ _address ] , "Addres is already in the whitelist");
+        require( !whiteList[ _address ] , "Address is already in the whitelist");
 
         whiteList[ _address ] = true;
 
@@ -61,7 +61,7 @@ contract Token721 is ERC721, Ownable {
 
     function tokenURI( uint256 _tokenId) public view override returns( string memory ){
 
-        require( _exists(_tokenId), "token dosn't exist");
+        require( _exists(_tokenId), "token doesn't exist");
 
         return string( abi.encodePacked( baseUri, Strings.toString(_tokenId), '.json' ));
 
@@ -93,7 +93,7 @@ contract Token721 is ERC721, Ownable {
 
         uint256 balance = address(this).balance;
 
-        require(balance > 0, 'Can not transfer: insuficent founds');
+        require(balance > 0, "Can't withDraw: insufficient founds");
 
         payable(msg.sender).transfer(balance);
 
