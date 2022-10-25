@@ -91,19 +91,19 @@ contract MetaSender is Ownable {
 
     function getTransactionCost( uint256 _value, uint256 _requiredValue) private view returns(uint256) {
 
-        uint remaingValue = _value;
+        uint remainingValue = _value;
 
-        if ( isVIP( msg.sender )) require( remaingValue >= _requiredValue, "The value is less than required");
+        if ( isVIP( msg.sender )) require( remainingValue >= _requiredValue, "The value is less than required");
 
         else {
 
-            require( remaingValue >= _requiredValue + txFee, "The value is less than required");
+            require( remainingValue >= _requiredValue + txFee, "The value is less than required");
 
-            remaingValue -= txFee;
+            remainingValue -= txFee;
 
         }
 
-        return remaingValue;
+        return remainingValue;
 
     }
 
