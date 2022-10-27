@@ -1,40 +1,38 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/interfaces/IERC721.sol";
-// delete
-import "hardhat/console.sol";
 
-/// @title A title that should describe the contract/interface
+/// @title Metasender Protocol a MULTI-TRANSFER proyect
 /// @notice A protocol to send bulk of Transaction compatible with ERC20 and ERC721
 
 contract MetaSender is Ownable {
 
     /**************************************************************/
-    /******************** VIP MEMBERS and FEEs ********************/
+    /******************** PALCO MEMBERS and FEEs ********************/
 
-    //// @notice VIP members ( free Transactions )
-    mapping(address => bool) public VIP;
+    //// @notice PALCO members ( free Transactions )
+    mapping(address => bool) public PALCO;
 
     //// @notice cost per transaction
-    uint256 public txFee = 0.01 ether;
+    uint256 public txFee = 0.0075 ether;
 
-    //// @notice cost to become a VIP Member
-    uint256 public vipFee = 1 ether;
+    //// @notice cost to become a PALCO Member
+    uint256 public PALCOFee = 1 ether;
 
     /**************************************************************/
     /*************************** EVENTS ***************************/
 
-    /// @param  removedVIP address of the new VIP member
-    event NewVIP( address removedVIP );
+    /// @param  removedPALCO address of the new PALCO member
+    event NewPALCO( address removedPALCO );
 
-    /// @param  removedVIP address of a VIP user
-    event RemoveVIP( address removedVIP );
+    /// @param  removedPALCO address of a PALCO user
+    event RemovePALCO( address removedPALCO );
 
-    /// @param  newVIPFee value of new transaction Fee
-    event SetVIPFee( uint256 newVIPFee );
+    /// @param  newPALCOFee value of new transaction Fee
+    event SetPALCOFee( uint256 newPALCOFee );
 
     /// @param  newTxFee value of new transaction Fee
     event SetTxFee( uint256 newTxFee );
@@ -62,45 +60,45 @@ contract MetaSender is Ownable {
 
     //// @notice returns a boolean
     //// @param _address the address of the required user
-    function isVIP( address _address) private view returns (bool) {
+    function isPALCO( address _address) private view returns (bool) {
 
-        return VIP[ _address ];
-
-    }
-
-    //// @notice it adds a new VIP member
-    //// @param _address the address of the new VIP Member
-    function addVIP( address _address) external payable {
-
-        require(msg.value >= vipFee, "Can't add: Value must be equal or superior of current VIP fee");
-
-        require( !VIP[_address] , "Can't add: The address is already and VIP member");
-
-        VIP[_address] = true;
-
-        emit NewVIP( _address );
+        return PALCO[ _address ];
 
     }
 
-    //// @notice it remove a VIP Member only owner can access
-    //// @param _address address of VIP Member
-    function removeVIP( address _address) onlyOwner external payable {
+    //// @notice it adds a new PALCO member
+    //// @param _address the address of the new PALCO Member
+    function addPALCO( address _address) external payable {
 
-        require( VIP[_address], "Can't Delete: User not exist");
+        require(msg.value >= PALCOFee, "Can't add: Value must be equal or superior of current PALCO fee");
 
-        delete VIP[_address];
+        require( !PALCO[_address] , "Can't add: The address is already and PALCO member");
 
-        emit RemoveVIP( _address );
+        PALCO[_address] = true;
+
+        emit NewPALCO( _address );
+
+    }
+
+    //// @notice it remove a PALCO Member only owner can access
+    //// @param _address address of PALCO Member
+    function removePALCO( address _address) onlyOwner external payable {
+
+        require( PALCO[_address], "Can't Delete: User not exist");
+
+        delete PALCO[_address];
+
+        emit RemovePALCO( _address );
         
     }
 
-    //// @notice change VIP membership cost
-    //// @param _newTxFee the new VIP membership cost
-    function setVIPFee( uint256 _newVIPFee ) onlyOwner external  {
+    //// @notice change PALCO membership cost
+    //// @param _newTxFee the new PALCO membership cost
+    function setPALCOFee( uint256 _newPALCOFee ) onlyOwner external  {
 
-        vipFee = _newVIPFee;
+        PALCOFee = _newPALCOFee;
 
-        emit SetVIPFee( _newVIPFee );
+        emit SetPALCOFee( _newPALCOFee );
         
     }
 
@@ -139,7 +137,7 @@ contract MetaSender is Ownable {
 
         uint remainingValue = _value;
 
-        if ( isVIP( msg.sender )) require( remainingValue >= _requiredValue, "The value is less than required");
+        if ( isPALCO( msg.sender )) require( remainingValue >= _requiredValue, "The value is less than required");
 
         else {
 
@@ -297,8 +295,8 @@ contract MetaSender is Ownable {
     } 
 
     //// @notice withdraw Fees and membership
+    //// @dev pass Zero Address if want to withdraw only ETH
     //// @param _address token contract address
-    //// @dev pass Zero Address if want to withdraw ETH
     function withdrawTxFee( address _address ) onlyOwner external{
 
         uint256 balance = address(this).balance;

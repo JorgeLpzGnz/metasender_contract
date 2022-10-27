@@ -63,7 +63,7 @@ describe("MetaSender", function () {
 		const metaSender = await MetaSender.deploy();
 
 		const txFee = await metaSender.txFee() 
-		const vipFee = await metaSender.vipFee() 
+		const PALCOFee = await metaSender.PALCOFee() 
 
 		const Token20 = await ethers.getContractFactory("Token20");
 		const token20 = await Token20.deploy();
@@ -71,48 +71,48 @@ describe("MetaSender", function () {
 		const Token721 = await ethers.getContractFactory("Token721");
 		const token721 = await Token721.deploy();
 
-		return { metaSender, owner, anotherAccount, token20, token721, txFee, vipFee };
+		return { metaSender, owner, anotherAccount, token20, token721, txFee, PALCOFee };
 	}
 
-	describe("VIP List", () => {
+	describe("PALCO List", () => {
 
 		describe("Errors", () => {
 
-			it("Should failed when try to add VIP and doesn't pass current VIP fee", async () => {
+			it("Should failed when try to add PALCO and doesn't pass current PALCO fee", async () => {
 
 				const { metaSender, anotherAccount, owner } = await loadFixture( deployMetaSender )
 
 				await expect( 
 
-					metaSender.addVIP(anotherAccount.address, { value: 0})
+					metaSender.addPALCO(anotherAccount.address, { value: 0})
 
-				).to.be.revertedWith("Can't add: Value must be equal or superior of current VIP fee")
+				).to.be.revertedWith("Can't add: Value must be equal or superior of current PALCO fee")
 
 			})
 
-			it("Should failed when try to add VIP and user alrady exist", async () => {
+			it("Should failed when try to add PALCO and user alrady exist", async () => {
 
-				const { metaSender, anotherAccount, owner, vipFee } = await loadFixture( deployMetaSender )
+				const { metaSender, anotherAccount, owner, PALCOFee } = await loadFixture( deployMetaSender )
 
-				await metaSender.addVIP(anotherAccount.address, { value: vipFee})
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee})
 
 				await expect( 
 
-					metaSender.addVIP(anotherAccount.address, { value: vipFee})
+					metaSender.addPALCO(anotherAccount.address, { value: PALCOFee})
 
-				).to.be.revertedWith("Can't add: The address is already and VIP member")
+				).to.be.revertedWith("Can't add: The address is already and PALCO member")
 
 			})
 
-			it("Should failed when try to remove VIP and caller is not owner", async () => {
+			it("Should failed when try to remove PALCO and caller is not owner", async () => {
 
-				const { metaSender, anotherAccount, vipFee } = await loadFixture( deployMetaSender ) 
+				const { metaSender, anotherAccount, PALCOFee } = await loadFixture( deployMetaSender ) 
 
-				await metaSender.addVIP(anotherAccount.address, { value: vipFee})
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee})
 
 				expect( 
 
-					metaSender.connect(anotherAccount.address).removeVIP(anotherAccount.address)
+					metaSender.connect(anotherAccount.address).removePALCO(anotherAccount.address)
 
 				).to.be.reverted
 
@@ -122,37 +122,37 @@ describe("MetaSender", function () {
 
 		describe("functionalities", () => {
 
-			it("Should add a new VIP", async () => {
+			it("Should add a new PALCO", async () => {
 
-				const { metaSender, anotherAccount, vipFee } = await loadFixture( deployMetaSender ) 
+				const { metaSender, anotherAccount, PALCOFee } = await loadFixture( deployMetaSender ) 
 
-				expect( ! await metaSender.VIP(anotherAccount.address) )
+				expect( ! await metaSender.PALCO(anotherAccount.address) )
 
-				await metaSender.addVIP(anotherAccount.address, { value: vipFee})
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee})
 
-				expect( await metaSender.VIP(anotherAccount.address) )
-
-			})
-
-			it("Should remove a VIP", async () => {
-
-				const { metaSender, anotherAccount, vipFee } = await loadFixture( deployMetaSender ) 
-
-				expect( ! await metaSender.VIP(anotherAccount.address) )
-
-				await metaSender.addVIP(anotherAccount.address, { value: vipFee})
-
-				expect( await metaSender.VIP(anotherAccount.address) )
-
-				await metaSender.removeVIP(anotherAccount.address)
-
-				expect( ! await metaSender.VIP(anotherAccount.address) )
+				expect( await metaSender.PALCO(anotherAccount.address) )
 
 			})
 
-			it("should not charge the transaction fee for a VIP", async () => {
+			it("Should remove a PALCO", async () => {
 
-				const { metaSender, token20, token721, anotherAccount, vipFee, owner } = await loadFixture(deployMetaSender);
+				const { metaSender, anotherAccount, PALCOFee } = await loadFixture( deployMetaSender ) 
+
+				expect( ! await metaSender.PALCO(anotherAccount.address) )
+
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee})
+
+				expect( await metaSender.PALCO(anotherAccount.address) )
+
+				await metaSender.removePALCO(anotherAccount.address)
+
+				expect( ! await metaSender.PALCO(anotherAccount.address) )
+
+			})
+
+			it("should not charge the transaction fee for a PALCO", async () => {
+
+				const { metaSender, token20, token721, anotherAccount, PALCOFee, owner } = await loadFixture(deployMetaSender);
 
 				const { addresses, amounts, tokenIds } = await getExample(25);
 
@@ -164,9 +164,9 @@ describe("MetaSender", function () {
 
 				await token721.connect(anotherAccount).setApprovalForAll(metaSender.address, true)
 
-				await metaSender.connect(anotherAccount).addVIP( anotherAccount.address, { value: vipFee } )
+				await metaSender.connect(anotherAccount).addPALCO( anotherAccount.address, { value: PALCOFee } )
 
-				await metaSender.addVIP( owner.address, { value: vipFee } )
+				await metaSender.addPALCO( owner.address, { value: PALCOFee } )
 
 				expect( await metaSender.connect(anotherAccount).sendEthSameValue(addresses, value, {
 					value: ethers.utils.parseEther("25"),
@@ -679,7 +679,7 @@ describe("MetaSender", function () {
 
 		describe("Errors", () => {
 
-			it("Should failed if a not VIP doesn't pay fee", async () => {
+			it("Should failed if a not PALCO doesn't pay fee", async () => {
 
 				const { metaSender, token20, token721 } = await loadFixture(deployMetaSender);
 
@@ -729,13 +729,13 @@ describe("MetaSender", function () {
 
 			})
 
-			it("Should failed when try to change VIP fee and caller is not owner", async () => {
+			it("Should failed when try to change PALCO fee and caller is not owner", async () => {
 
 				const { metaSender, anotherAccount } = await loadFixture( deployMetaSender ) 
 
 				await expect( 
 
-					metaSender.connect(anotherAccount).setVIPFee( 0 )
+					metaSender.connect(anotherAccount).setPALCOFee( 0 )
 
 				).to.be.reverted
 
@@ -759,15 +759,15 @@ describe("MetaSender", function () {
 
 			})
 
-			it("Should change a VIP fee", async () => {
+			it("Should change a PALCO fee", async () => {
 
 				const { metaSender } = await loadFixture( deployMetaSender )
 
 				const fee = ethers.utils.parseEther('0.5')
 
-				await metaSender.setVIPFee( fee )
+				await metaSender.setPALCOFee( fee )
 
-				const newTxFee = await metaSender.vipFee()
+				const newTxFee = await metaSender.PALCOFee()
 
 				expect( fee == newTxFee )
 
@@ -811,7 +811,7 @@ describe("MetaSender", function () {
 
 			it("should withdraw contract founds", async () => {
 
-				const { metaSender, txFee, anotherAccount, vipFee, owner } = await loadFixture(deployMetaSender);
+				const { metaSender, txFee, anotherAccount, PALCOFee, owner } = await loadFixture(deployMetaSender);
 
 				const { addresses } = await getExample(25);
 
@@ -821,7 +821,7 @@ describe("MetaSender", function () {
 					value: ethers.utils.parseEther("25").add( txFee ),
 				})
 
-				await metaSender.addVIP(anotherAccount.address, { value: vipFee })
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee })
 
 				const prevBalance = await getBalances([owner])
 
@@ -835,7 +835,7 @@ describe("MetaSender", function () {
 
 			it("should withdraw contract founds and erc20", async () => {
 
-				const { metaSender, txFee, anotherAccount, vipFee, owner, token20 } = await loadFixture(deployMetaSender);
+				const { metaSender, txFee, anotherAccount, PALCOFee, owner, token20 } = await loadFixture(deployMetaSender);
 
 				const { addresses } = await getExample(25);
 
@@ -855,7 +855,7 @@ describe("MetaSender", function () {
 
 				})
 
-				await metaSender.addVIP(anotherAccount.address, { value: vipFee })
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee })
 
 				const prevBalance = await getBalances([owner])
 
@@ -899,34 +899,34 @@ describe("MetaSender", function () {
 
 		describe("functionalities", () => {
 
-			it("NewVIP", async () => {
+			it("NewPALCO", async () => {
 
-				const { metaSender, anotherAccount, vipFee } = await loadFixture(deployMetaSender);
+				const { metaSender, anotherAccount, PALCOFee } = await loadFixture(deployMetaSender);
 
 				expect( 
 
-					await metaSender.addVIP(anotherAccount.address, { value: vipFee })
+					await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee })
 
 				).to.emit( anotherAccount.address )
 
 			})
 
-			it("RemoveVIP", async () => {
+			it("RemovePALCO", async () => {
 
-				const { metaSender, anotherAccount, vipFee } = await loadFixture(deployMetaSender);
+				const { metaSender, anotherAccount, PALCOFee } = await loadFixture(deployMetaSender);
 
-				await metaSender.addVIP(anotherAccount.address, { value: vipFee })
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee })
 
-				expect( metaSender.VIP( anotherAccount.address ) )
+				expect( metaSender.PALCO( anotherAccount.address ) )
 
 				expect( 
 
-					await metaSender.removeVIP(anotherAccount.address, { value: vipFee })
+					await metaSender.removePALCO(anotherAccount.address, { value: PALCOFee })
 
 				).to.emit( anotherAccount.address )
 			})
 
-			it("SetVIPFee", async () => {
+			it("SetPALCOFee", async () => {
 
 				const { metaSender } = await loadFixture(deployMetaSender);
 
@@ -934,7 +934,7 @@ describe("MetaSender", function () {
 
 				expect( 
 
-					await metaSender.setVIPFee( newValue )
+					await metaSender.setPALCOFee( newValue )
 
 				).to.emit( newValue  )
 
@@ -1052,7 +1052,7 @@ describe("MetaSender", function () {
 
 			it("WithdrawTxFee", async () => {
 
-				const { metaSender, token20, owner, txFee, vipFee, anotherAccount } = await loadFixture(deployMetaSender);
+				const { metaSender, token20, owner, txFee, PALCOFee, anotherAccount } = await loadFixture(deployMetaSender);
 
 				const { addresses } = await getExample(25);
 
@@ -1064,7 +1064,7 @@ describe("MetaSender", function () {
 
 				})
 
-				await metaSender.addVIP(anotherAccount.address, { value: vipFee })
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee })
 
 				const supply = await token20.totalSupply()
 
