@@ -20,26 +20,26 @@ contract MetaSender is Ownable {
     uint256 public txFee = 0.0075 ether;
 
     //// @notice cost to become a PALCO Member
-    uint256 public PALCOFee = 1 ether;
+    uint256 public PALCOPass = 1 ether;
 
     /**************************************************************/
     /*************************** EVENTS ***************************/
 
-    /// @param  removedPALCO address of the new PALCO member
-    event NewPALCO( address removedPALCO );
+    /// @param  newPALCOMember address of the new PALCO member
+    event NewPALCOMember( address newPALCOMember );
 
-    /// @param  removedPALCO address of a PALCO user
-    event RemovePALCO( address removedPALCO );
+    /// @param  addressToRemove address of a PALCO member
+    event RemoveToPALCO( address addressToRemove );
 
-    /// @param  newPALCOFee value of new transaction Fee
-    event SetPALCOFee( uint256 newPALCOFee );
+    /// @param  newPALCOPass value of new transaction Fee
+    event SetPALCOPass( uint256 newPALCOPass );
 
     /// @param  newTxFee value of new transaction Fee
     event SetTxFee( uint256 newTxFee );
 
     /// @param  from address of the user
     /// @param  amount transferred amount
-    event LogETHBulkTransfer( address from, uint256 amount);
+    event LogNativeTokenBulkTransfer( address from, uint256 amount);
 
     /// @param  contractAddress token contract address
     /// @param  amount transferred amount
@@ -60,7 +60,7 @@ contract MetaSender is Ownable {
 
     //// @notice returns a boolean
     //// @param _address the address of the required user
-    function isPALCO( address _address) private view returns (bool) {
+    function isOnPALCO( address _address) private view returns (bool) {
 
         return PALCO[ _address ];
 
@@ -70,35 +70,35 @@ contract MetaSender is Ownable {
     //// @param _address the address of the new PALCO Member
     function addPALCO( address _address) external payable {
 
-        require(msg.value >= PALCOFee, "Can't add: Value must be equal or superior of current PALCO fee");
+        require(msg.value >= PALCOPass, "Can't add: Value must be equal or superior of current PALCO fee");
 
         require( !PALCO[_address] , "Can't add: The address is already and PALCO member");
 
         PALCO[_address] = true;
 
-        emit NewPALCO( _address );
+        emit NewPALCOMember( _address );
 
     }
 
     //// @notice it remove a PALCO Member only owner can access
     //// @param _address address of PALCO Member
-    function removePALCO( address _address) onlyOwner external payable {
+    function removeToPALCO( address _address) onlyOwner external payable {
 
         require( PALCO[_address], "Can't Delete: User not exist");
 
         delete PALCO[_address];
 
-        emit RemovePALCO( _address );
+        emit RemoveToPALCO( _address );
         
     }
 
     //// @notice change PALCO membership cost
     //// @param _newTxFee the new PALCO membership cost
-    function setPALCOFee( uint256 _newPALCOFee ) onlyOwner external  {
+    function setPALCOPass( uint256 _newPALCOPass ) onlyOwner external  {
 
-        PALCOFee = _newPALCOFee;
+        PALCOPass = _newPALCOPass;
 
-        emit SetPALCOFee( _newPALCOFee );
+        emit SetPALCOPass( _newPALCOPass );
         
     }
 
@@ -137,7 +137,7 @@ contract MetaSender is Ownable {
 
         uint remainingValue = _value;
 
-        if ( isPALCO( msg.sender )) require( remainingValue >= _requiredValue, "The value is less than required");
+        if ( isOnPALCO( msg.sender )) require( remainingValue >= _requiredValue, "The value is less than required");
 
         else {
 
@@ -157,9 +157,9 @@ contract MetaSender is Ownable {
     //// @notice ETH MULTI-TRANSFER transactions with same value
     //// @param _to array of receiver addresses
     //// @param _value amount to transfer
-    function sendEthSameValue(address[] memory _to, uint256 _value) external payable{
+    function sendNativeTokenSameValue(address[] memory _to, uint256 _value) external payable{
 
-        require(_to.length < 255, "Max 244 transaction by batch");
+        require(_to.length <= 255, "Invalid Arguments: Max 255 transactions by batch");
 
         uint256 totalValue = _to.length * _value;
 
@@ -169,24 +169,24 @@ contract MetaSender is Ownable {
 
             remainingValue -= _value;
 
-            require(payable(_to[i]).send(_value), "Transaction not sended");
+            require(payable(_to[i]).send(_value), "Transfer failed");
 
         }
 
         if (remainingValue > 0) payable(msg.sender).transfer(remainingValue);
 
-        emit LogETHBulkTransfer( msg.sender, totalValue );
+        emit LogNativeTokenBulkTransfer( msg.sender, totalValue );
 
     }
 
     //// @notice ETH MULTI-TRANSFER transaction with different value
     //// @param _to array of receiver addresses
     //// @param _value array of amounts to transfer
-    function sendEthDifferentValue( address[] memory _to, uint256[] memory _value) external payable {
+    function sendNativeTokenDifferentValue( address[] memory _to, uint256[] memory _value) external payable {
 
-        require( _to.length == _value.length, "Addresses and values most be equal" );
+        require( _to.length == _value.length, "Invalid Arguments: Addresses and values most be equal" );
 
-        require( _to.length < 255, "Max 244 transaction by batch" );
+        require( _to.length <= 255, "Invalid Arguments: Max 255 transactions by batch" );
 
         uint256 totalValue = getTotalValue( _value );
 
@@ -196,13 +196,13 @@ contract MetaSender is Ownable {
 
             remainingValue -= _value[i];
 
-            require( payable(_to[i]).send(_value[i]), "Transaction not sended" );
+            require( payable(_to[i]).send(_value[i]), "Transfer failed" );
 
         }
 
         if (remainingValue > 0) payable(msg.sender).transfer(remainingValue);
 
-        emit LogETHBulkTransfer( msg.sender, totalValue);
+        emit LogNativeTokenBulkTransfer( msg.sender, totalValue);
     }
 
     //// @notice MULTI-TRANSFER ERC20 Tokens with different value
@@ -211,7 +211,7 @@ contract MetaSender is Ownable {
     //// @param _value amount to transfer
     function sendIERC20SameValue( address _contractAddress, address[] memory _to, uint256 _value) payable external{
 
-        require( _to.length < 255, "Max 244 transaction by batch" );
+        require( _to.length <= 255, "Invalid Arguments: Max 255 transactions by batch" );
 
         getTransactionCost( msg.value, 0);
 
@@ -233,9 +233,9 @@ contract MetaSender is Ownable {
     //// @param _value array of amounts to transfer
     function sendIERC20DifferentValue( address _contractAddress, address[] memory _to, uint256[] memory _value) payable external{
 
-        require( _to.length == _value.length, "Addresses and values most be equal" );
+        require( _to.length == _value.length, "Invalid Arguments: Addresses and values most be equal" );
 
-        require( _to.length < 255, "Max 244 transaction by batch" );
+        require( _to.length <= 255, "Invalid Arguments: Max 255 transactions by batch" );
 
         getTransactionCost( msg.value, 0);
 
@@ -257,9 +257,9 @@ contract MetaSender is Ownable {
     //// @param _tokenId array of token Ids to transfer
     function sendIERC721( address _contractAddress, address[] memory _to, uint256[] memory _tokenId) payable external{
 
-        require( _to.length == _tokenId.length, "Addresses and values most be equal" );
+        require( _to.length == _tokenId.length, "Invalid Arguments: Addresses and values most be equal" );
 
-        require( _to.length < 255, "Max 244 transaction by batch" );
+        require( _to.length <= 255, "Invalid Arguments: Max 255 transactions by batch" );
 
         getTransactionCost( msg.value, 0);
 
@@ -280,7 +280,7 @@ contract MetaSender is Ownable {
 
     //// @notice withdraw a ERC20 tokens
     //// @param _address token contract address
-    function withDrawIRC20( address _address ) onlyOwner public  {
+    function withDrawIRC20( address _address ) onlyOwner external  {
 
         IERC20 Token = IERC20( _address );
 
@@ -296,16 +296,13 @@ contract MetaSender is Ownable {
 
     //// @notice withdraw Fees and membership
     //// @dev pass Zero Address if want to withdraw only ETH
-    //// @param _address token contract address
-    function withdrawTxFee( address _address ) onlyOwner external{
+    function withdrawTxFee() onlyOwner external{
 
         uint256 balance = address(this).balance;
 
         require(balance > 0, "Can't withDraw: insufficient founds");
 
         payable(owner()).transfer(balance);
-
-        if ( _address != address(0) ) withDrawIRC20(_address);
 
         emit WithdrawTxFee( owner(), balance );
 

@@ -63,7 +63,7 @@ describe("MetaSender", function () {
 		const metaSender = await MetaSender.deploy();
 
 		const txFee = await metaSender.txFee() 
-		const PALCOFee = await metaSender.PALCOFee() 
+		const PALCOPass = await metaSender.PALCOPass() 
 
 		const Token20 = await ethers.getContractFactory("Token20");
 		const token20 = await Token20.deploy();
@@ -71,7 +71,7 @@ describe("MetaSender", function () {
 		const Token721 = await ethers.getContractFactory("Token721");
 		const token721 = await Token721.deploy();
 
-		return { metaSender, owner, anotherAccount, token20, token721, txFee, PALCOFee };
+		return { metaSender, owner, anotherAccount, token20, token721, txFee, PALCOPass };
 	}
 
 	describe("PALCO List", () => {
@@ -92,13 +92,13 @@ describe("MetaSender", function () {
 
 			it("Should failed when try to add PALCO and user alrady exist", async () => {
 
-				const { metaSender, anotherAccount, owner, PALCOFee } = await loadFixture( deployMetaSender )
+				const { metaSender, anotherAccount, owner, PALCOPass } = await loadFixture( deployMetaSender )
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee})
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass})
 
 				await expect( 
 
-					metaSender.addPALCO(anotherAccount.address, { value: PALCOFee})
+					metaSender.addPALCO(anotherAccount.address, { value: PALCOPass})
 
 				).to.be.revertedWith("Can't add: The address is already and PALCO member")
 
@@ -106,15 +106,53 @@ describe("MetaSender", function () {
 
 			it("Should failed when try to remove PALCO and caller is not owner", async () => {
 
-				const { metaSender, anotherAccount, PALCOFee } = await loadFixture( deployMetaSender ) 
+				const { metaSender, anotherAccount, PALCOPass } = await loadFixture( deployMetaSender ) 
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee})
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass})
 
 				expect( 
 
-					metaSender.connect(anotherAccount.address).removePALCO(anotherAccount.address)
+					metaSender.connect(anotherAccount.address).removeToPALCO(anotherAccount.address)
 
 				).to.be.reverted
+
+			})
+
+			it("Should failed if a not PALCO doesn't pay fee", async () => {
+
+				const { metaSender, token20, token721 } = await loadFixture(deployMetaSender);
+
+				const { addresses, amounts, tokenIds } = await getExample(25);
+
+				const value = ethers.utils.parseEther("1.0");
+
+				await expect( metaSender.sendNativeTokenSameValue(addresses, value, {
+					value: ethers.utils.parseEther("25"),
+				})).to.be.reverted
+
+				await expect( metaSender.sendNativeTokenDifferentValue(
+					addresses,
+					amounts,
+					{ value: getPrice(amounts)}
+				)).to.be.reverted
+
+				await expect( metaSender.sendIERC20SameValue(
+					token20.address,
+					addresses,
+					ethers.utils.parseEther('1')
+				)).to.be.reverted
+				
+				await expect( metaSender.sendIERC20DifferentValue(
+					token20.address,
+					addresses,
+					amounts
+				)).to.be.reverted
+
+				await expect( metaSender.sendIERC721(
+					token721.address,
+					addresses,
+					tokenIds
+				)).to.be.reverted
 
 			})
 
@@ -124,11 +162,11 @@ describe("MetaSender", function () {
 
 			it("Should add a new PALCO", async () => {
 
-				const { metaSender, anotherAccount, PALCOFee } = await loadFixture( deployMetaSender ) 
+				const { metaSender, anotherAccount, PALCOPass } = await loadFixture( deployMetaSender ) 
 
 				expect( ! await metaSender.PALCO(anotherAccount.address) )
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee})
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass})
 
 				expect( await metaSender.PALCO(anotherAccount.address) )
 
@@ -136,15 +174,15 @@ describe("MetaSender", function () {
 
 			it("Should remove a PALCO", async () => {
 
-				const { metaSender, anotherAccount, PALCOFee } = await loadFixture( deployMetaSender ) 
+				const { metaSender, anotherAccount, PALCOPass } = await loadFixture( deployMetaSender ) 
 
 				expect( ! await metaSender.PALCO(anotherAccount.address) )
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee})
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass})
 
 				expect( await metaSender.PALCO(anotherAccount.address) )
 
-				await metaSender.removePALCO(anotherAccount.address)
+				await metaSender.removeToPALCO(anotherAccount.address)
 
 				expect( ! await metaSender.PALCO(anotherAccount.address) )
 
@@ -152,7 +190,7 @@ describe("MetaSender", function () {
 
 			it("should not charge the transaction fee for a PALCO", async () => {
 
-				const { metaSender, token20, token721, anotherAccount, PALCOFee, owner } = await loadFixture(deployMetaSender);
+				const { metaSender, token20, token721, anotherAccount, PALCOPass, owner } = await loadFixture(deployMetaSender);
 
 				const { addresses, amounts, tokenIds } = await getExample(25);
 
@@ -164,15 +202,15 @@ describe("MetaSender", function () {
 
 				await token721.connect(anotherAccount).setApprovalForAll(metaSender.address, true)
 
-				await metaSender.connect(anotherAccount).addPALCO( anotherAccount.address, { value: PALCOFee } )
+				await metaSender.connect(anotherAccount).addPALCO( anotherAccount.address, { value: PALCOPass } )
 
-				await metaSender.addPALCO( owner.address, { value: PALCOFee } )
+				await metaSender.addPALCO( owner.address, { value: PALCOPass } )
 
-				expect( await metaSender.connect(anotherAccount).sendEthSameValue(addresses, value, {
+				expect( await metaSender.connect(anotherAccount).sendNativeTokenSameValue(addresses, value, {
 					value: ethers.utils.parseEther("25"),
 				}))
 
-				expect( await metaSender.connect(anotherAccount).sendEthDifferentValue(
+				expect( await metaSender.connect(anotherAccount).sendNativeTokenDifferentValue(
 					addresses,
 					amounts,
 					{ value: getPrice(amounts)}
@@ -202,22 +240,86 @@ describe("MetaSender", function () {
 
 	})
 
+	describe("Fees", () => {
+
+		describe("Errors", () => {
+
+			it("Should failed when try to change txFee and caller is not owner", async () => {
+
+				const { metaSender, anotherAccount } = await loadFixture( deployMetaSender ) 
+
+				await expect( 
+
+					metaSender.connect(anotherAccount).setTxFee( 0 )
+
+				).to.be.reverted
+
+			})
+
+			it("Should failed when try to change PALCO fee and caller is not owner", async () => {
+
+				const { metaSender, anotherAccount } = await loadFixture( deployMetaSender ) 
+
+				await expect( 
+
+					metaSender.connect(anotherAccount).setPALCOPass( 0 )
+
+				).to.be.reverted
+
+			})
+
+		})
+
+		describe("functionalities", () => {
+
+			it("Should change a txFee", async () => {
+
+				const { metaSender } = await loadFixture( deployMetaSender )
+
+				const fee = ethers.utils.parseEther('0.5')
+
+				await metaSender.setTxFee( fee )
+
+				const newTxFee = await metaSender.txFee()
+
+				expect( fee == newTxFee )
+
+			})
+
+			it("Should change a PALCO fee", async () => {
+
+				const { metaSender } = await loadFixture( deployMetaSender )
+
+				const fee = ethers.utils.parseEther('0.5')
+
+				await metaSender.setPALCOPass( fee )
+
+				const newTxFee = await metaSender.PALCOPass()
+
+				expect( fee == newTxFee )
+
+			})
+
+		})
+
+	})
+
 	describe("transfer ETH from same value", () => {
 
 		describe("Errors", () => {
 
-			it("it should fail if is passed more than 254 wallets", async () => {
+			it("it should fail if is passed more than 255 wallets", async () => {
 				const { metaSender, txFee } = await loadFixture(deployMetaSender);
 
-				const { addresses } = await getExample(255)
+				const { addresses } = await getExample(256)
 
 				await expect(
 
-					metaSender.sendEthSameValue(addresses, 10, {
+					metaSender.sendNativeTokenSameValue(addresses, 10, {
 						value: ethers.utils.parseEther(`2550`).add( txFee ),
 					})
 
-				).to.be.revertedWith("Max 244 transaction by batch");
+				).to.be.revertedWith("Invalid Arguments: Max 255 transactions by batch");
 
 			});
 
@@ -227,7 +329,7 @@ describe("MetaSender", function () {
 				const { addresses } = await getExample(25);
 
 				await expect(
-					metaSender.sendEthSameValue(addresses, 10, {
+					metaSender.sendNativeTokenSameValue(addresses, 10, {
 						value: ethers.utils.parseEther(`0`),
 					})
 				).to.be.revertedWith("The value is less than required");
@@ -247,7 +349,7 @@ describe("MetaSender", function () {
 				const value = ethers.utils.parseEther("1.0");
 
 				expect( 
-					await metaSender.sendEthSameValue(
+					await metaSender.sendNativeTokenSameValue(
 						addresses, 
 						value, 
 						{ value: ethers.utils.parseEther("25").add( txFee ) }
@@ -266,7 +368,7 @@ describe("MetaSender", function () {
 
 				const prevBalances = await getBalances(accounts);
 
-				await metaSender.sendEthSameValue(addresses, value, {
+				await metaSender.sendNativeTokenSameValue(addresses, value, {
 					value: ethers.utils.parseEther("10").add( txFee ),
 				});
 
@@ -288,7 +390,7 @@ describe("MetaSender", function () {
 
 				const value = ethers.utils.parseEther("1");
 
-				await metaSender.sendEthSameValue(addresses, value, {
+				await metaSender.sendNativeTokenSameValue(addresses, value, {
 					value: ethers.utils.parseEther("10").add( txFee ),
 				});
 
@@ -312,37 +414,37 @@ describe("MetaSender", function () {
 				const { addresses } = await getExample(25);
 
 				await expect(
-					metaSender.sendEthDifferentValue(
+					metaSender.sendNativeTokenDifferentValue(
 						addresses,
 						[1, 2],
 						{
 							value: ethers.utils.parseEther(`2`).add( txFee ),
 						}
 					)
-				).to.be.revertedWith("Addresses and values most be equal");
+				).to.be.revertedWith("Invalid Arguments: Addresses and values most be equal");
 			});
 
-			it("it should fail if is passed more than 254 wallets", async () => {
+			it("it should fail if is passed more than 255 wallets", async () => {
 
 				const { metaSender, txFee } = await loadFixture(deployMetaSender);
-				const { addresses, amounts } = await getExample(255);
+				const { addresses, amounts } = await getExample(256);
 
 				await expect(
-					metaSender.sendEthDifferentValue(
+					metaSender.sendNativeTokenDifferentValue(
 						addresses,
 						amounts,
 						{
 							value: getPrice(amounts).add( txFee ),
 						}
 					)
-				).to.be.revertedWith("Max 244 transaction by batch");
+				).to.be.revertedWith("Invalid Arguments: Max 255 transactions by batch");
 			});
 			it("it should fail if the passed value is less than needed", async () => {
 				const { metaSender } = await loadFixture(deployMetaSender);
 				const { addresses, amounts } = await getExample(25);
 
 				await expect(
-					metaSender.sendEthDifferentValue(
+					metaSender.sendNativeTokenDifferentValue(
 						addresses,
 						amounts,
 						{
@@ -360,7 +462,7 @@ describe("MetaSender", function () {
 
 				const { addresses, amounts } = await getExample(1);
 
-				await metaSender.sendEthDifferentValue(
+				await metaSender.sendNativeTokenDifferentValue(
 					addresses,
 					amounts,
 					{ value: getPrice(amounts).add( txFee ) }
@@ -375,7 +477,7 @@ describe("MetaSender", function () {
 
 				const prevBalances = await getBalances(accounts);
 
-				await metaSender.sendEthDifferentValue(
+				await metaSender.sendNativeTokenDifferentValue(
 					addresses,
 					amounts,
 					{
@@ -396,7 +498,7 @@ describe("MetaSender", function () {
 
 				const [prevBalance] = await getBalances([owner]);
 
-				await metaSender.sendEthDifferentValue(
+				await metaSender.sendNativeTokenDifferentValue(
 					addresses,
 					amounts,
 					{
@@ -419,19 +521,19 @@ describe("MetaSender", function () {
 
 		describe("Errors", () => {
 
-			it("should failed if pass more than 254 transactions", async() => {
+			it("should failed if pass more than 255 transactions", async() => {
 
 				const { metaSender, token20, txFee } = await loadFixture( deployMetaSender )
 
-				const { addresses } = await getExample(255)
+				const { addresses } = await getExample(256)
 
-				await token20.approve(metaSender.address, ethers.utils.parseEther('255'))
+				await token20.approve(metaSender.address, ethers.utils.parseEther('256'))
 
 				await expect( metaSender.sendIERC20SameValue(
 					token20.address,
 					addresses,
 					ethers.utils.parseEther('1').add( txFee )
-				)).to.be.revertedWith("Max 244 transaction by batch")
+				)).to.be.revertedWith("Invalid Arguments: Max 255 transactions by batch")
 
 			})
 
@@ -439,7 +541,7 @@ describe("MetaSender", function () {
 
 				const { metaSender, token20 } = await loadFixture( deployMetaSender )
 
-				const { addresses } = await getExample(254)
+				const { addresses } = await getExample(255)
 
 				await token20.approve(metaSender.address, ethers.utils.parseEther('255'))
 
@@ -502,11 +604,11 @@ describe("MetaSender", function () {
 
 		describe("Errors", () => {
 
-			it("should failed if pass more than 254 transactions", async() => {
+			it("should failed if pass more than 255 transactions", async() => {
 
 				const { metaSender, token20, txFee } = await loadFixture( deployMetaSender )
 
-				const { addresses, amounts } = await getExample(255)
+				const { addresses, amounts } = await getExample(256)
 
 				await token20.approve(metaSender.address, ethers.utils.parseEther('400'))
 				
@@ -515,7 +617,7 @@ describe("MetaSender", function () {
 					addresses,
 					amounts, 
 					{ value: txFee }
-				)).to.be.revertedWith("Max 244 transaction by batch")
+				)).to.be.revertedWith("Invalid Arguments: Max 255 transactions by batch")
 
 			})
 
@@ -586,13 +688,13 @@ describe("MetaSender", function () {
 
 		describe("Errors", () => {
 
-			it("should failed if pass more than 254 transactions", async() => {
+			it("should failed if pass more than 255 transactions", async() => {
 
 				const { metaSender, token721, txFee } = await loadFixture( deployMetaSender )
 
-				const { addresses, tokenIds } = await getExample(255)
+				const { addresses, tokenIds } = await getExample(256)
 
-				await token721.mintToken721(255)
+				await token721.mintToken721(256)
 
 				await token721.setApprovalForAll(metaSender.address, true)
 
@@ -601,7 +703,7 @@ describe("MetaSender", function () {
 					addresses,
 					tokenIds, 
 					{ value: txFee }
-				)).to.be.revertedWith("Max 244 transaction by batch")
+				)).to.be.revertedWith("Invalid Arguments: Max 255 transactions by batch")
 
 			})
 
@@ -675,108 +777,6 @@ describe("MetaSender", function () {
 		
 	})
 
-	describe("Fees", () => {
-
-		describe("Errors", () => {
-
-			it("Should failed if a not PALCO doesn't pay fee", async () => {
-
-				const { metaSender, token20, token721 } = await loadFixture(deployMetaSender);
-
-				const { addresses, amounts, tokenIds } = await getExample(25);
-
-				const value = ethers.utils.parseEther("1.0");
-
-				await expect( metaSender.sendEthSameValue(addresses, value, {
-					value: ethers.utils.parseEther("25"),
-				})).to.be.reverted
-
-				await expect( metaSender.sendEthDifferentValue(
-					addresses,
-					amounts,
-					{ value: getPrice(amounts)}
-				)).to.be.reverted
-
-				await expect( metaSender.sendIERC20SameValue(
-					token20.address,
-					addresses,
-					ethers.utils.parseEther('1')
-				)).to.be.reverted
-				
-				await expect( metaSender.sendIERC20DifferentValue(
-					token20.address,
-					addresses,
-					amounts
-				)).to.be.reverted
-
-				await expect( metaSender.sendIERC721(
-					token721.address,
-					addresses,
-					tokenIds
-				)).to.be.reverted
-
-			})
-
-			it("Should failed when try to change txFee and caller is not owner", async () => {
-
-				const { metaSender, anotherAccount } = await loadFixture( deployMetaSender ) 
-
-				await expect( 
-
-					metaSender.connect(anotherAccount).setTxFee( 0 )
-
-				).to.be.reverted
-
-			})
-
-			it("Should failed when try to change PALCO fee and caller is not owner", async () => {
-
-				const { metaSender, anotherAccount } = await loadFixture( deployMetaSender ) 
-
-				await expect( 
-
-					metaSender.connect(anotherAccount).setPALCOFee( 0 )
-
-				).to.be.reverted
-
-			})
-
-		})
-
-		describe("functionalities", () => {
-
-			it("Should change a txFee", async () => {
-
-				const { metaSender } = await loadFixture( deployMetaSender )
-
-				const fee = ethers.utils.parseEther('0.5')
-
-				await metaSender.setTxFee( fee )
-
-				const newTxFee = await metaSender.txFee()
-
-				expect( fee == newTxFee )
-
-			})
-
-			it("Should change a PALCO fee", async () => {
-
-				const { metaSender } = await loadFixture( deployMetaSender )
-
-				const fee = ethers.utils.parseEther('0.5')
-
-				await metaSender.setPALCOFee( fee )
-
-				const newTxFee = await metaSender.PALCOFee()
-
-				expect( fee == newTxFee )
-
-			})
-
-		})
-
-	})
-
 	describe("withdraw functions", () => {
 
 		describe("Errors", () => {
@@ -787,7 +787,7 @@ describe("MetaSender", function () {
 
 				await expect( 
 
-					metaSender.connect(anotherAccount).withdrawTxFee( ethers.constants.AddressZero )
+					metaSender.connect(anotherAccount).withdrawTxFee()
 
 				).to.be.reverted
 
@@ -799,7 +799,7 @@ describe("MetaSender", function () {
 
 				await expect( 
 
-					metaSender.withdrawTxFee( ethers.constants.AddressZero ) 
+					metaSender.withdrawTxFee() 
 
 				).to.be.revertedWith("Can't withDraw: insufficient founds")
 
@@ -811,63 +811,25 @@ describe("MetaSender", function () {
 
 			it("should withdraw contract founds", async () => {
 
-				const { metaSender, txFee, anotherAccount, PALCOFee, owner } = await loadFixture(deployMetaSender);
+				const { metaSender, txFee, anotherAccount, PALCOPass, owner } = await loadFixture(deployMetaSender);
 
 				const { addresses } = await getExample(25);
 
 				const value = ethers.utils.parseEther("1.0");
 
-				await metaSender.sendEthSameValue(addresses, value, {
+				await metaSender.sendNativeTokenSameValue(addresses, value, {
 					value: ethers.utils.parseEther("25").add( txFee ),
 				})
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee })
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass })
 
 				const prevBalance = await getBalances([owner])
 
-				await metaSender.withdrawTxFee( ethers.constants.AddressZero )
+				await metaSender.withdrawTxFee()
 
 				const currBalance = await getBalances([owner])
 
 				expect( compareBalances( prevBalance, currBalance ))
-
-			})
-
-			it("should withdraw contract founds and erc20", async () => {
-
-				const { metaSender, txFee, anotherAccount, PALCOFee, owner, token20 } = await loadFixture(deployMetaSender);
-
-				const { addresses } = await getExample(25);
-
-				const value = ethers.utils.parseEther("1.0");
-
-				const supply = token20.totalSupply()
-
-				await token20.transfer(metaSender.address, supply)
-
-				const erc20prevBalance = token20.balanceOf(owner.address)
-
-				expect( erc20prevBalance == 0 )
-
-				await metaSender.sendEthSameValue(addresses, value, {
-
-					value: ethers.utils.parseEther("25").add( txFee ),
-
-				})
-
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee })
-
-				const prevBalance = await getBalances([owner])
-
-				await metaSender.withdrawTxFee(token20.address)
-
-				const currBalance = await getBalances([owner])
-
-				const erc20Balance = token20.balanceOf(owner.address)
-
-				expect( compareBalances( prevBalance, currBalance ))
-
-				expect( erc20Balance > 0 )
 
 			})
 
@@ -901,32 +863,32 @@ describe("MetaSender", function () {
 
 			it("NewPALCO", async () => {
 
-				const { metaSender, anotherAccount, PALCOFee } = await loadFixture(deployMetaSender);
+				const { metaSender, anotherAccount, PALCOPass } = await loadFixture(deployMetaSender);
 
 				expect( 
 
-					await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee })
+					await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass })
 
 				).to.emit( anotherAccount.address )
 
 			})
 
-			it("RemovePALCO", async () => {
+			it("removeToPALCO", async () => {
 
-				const { metaSender, anotherAccount, PALCOFee } = await loadFixture(deployMetaSender);
+				const { metaSender, anotherAccount, PALCOPass } = await loadFixture(deployMetaSender);
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee })
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass })
 
 				expect( metaSender.PALCO( anotherAccount.address ) )
 
 				expect( 
 
-					await metaSender.removePALCO(anotherAccount.address, { value: PALCOFee })
+					await metaSender.removeToPALCO(anotherAccount.address, { value: PALCOPass })
 
 				).to.emit( anotherAccount.address )
 			})
 
-			it("SetPALCOFee", async () => {
+			it("SetPALCOPass", async () => {
 
 				const { metaSender } = await loadFixture(deployMetaSender);
 
@@ -934,7 +896,7 @@ describe("MetaSender", function () {
 
 				expect( 
 
-					await metaSender.setPALCOFee( newValue )
+					await metaSender.setPALCOPass( newValue )
 
 				).to.emit( newValue  )
 
@@ -954,7 +916,7 @@ describe("MetaSender", function () {
 
 			})
 
-			it("LogETHBulkTransfer", async () => {
+			it("LogNativeTokenBulkTransfer", async () => {
 
 				const { metaSender, txFee, owner } = await loadFixture(deployMetaSender);
 
@@ -964,7 +926,7 @@ describe("MetaSender", function () {
 
 				expect( 
 
-					await metaSender.sendEthSameValue(
+					await metaSender.sendNativeTokenSameValue(
 						addresses, 
 						value, 
 						{ value: ethers.utils.parseEther("25").add( txFee ) }
@@ -975,7 +937,7 @@ describe("MetaSender", function () {
 
 				expect( 
 
-					await metaSender.sendEthDifferentValue(
+					await metaSender.sendNativeTokenDifferentValue(
 						addresses,
 						amounts,
 						{ value: getPrice(amounts).add( txFee ) }
@@ -1052,41 +1014,29 @@ describe("MetaSender", function () {
 
 			it("WithdrawTxFee", async () => {
 
-				const { metaSender, token20, owner, txFee, PALCOFee, anotherAccount } = await loadFixture(deployMetaSender);
+				const { metaSender, owner, txFee, PALCOPass, anotherAccount } = await loadFixture(deployMetaSender);
 
 				const { addresses } = await getExample(25);
 
 				const value = ethers.utils.parseEther("1.0");
 
-				await metaSender.sendEthSameValue(addresses, value, {
+				await metaSender.sendNativeTokenSameValue(addresses, value, {
 
 					value: ethers.utils.parseEther("25").add( txFee ),
 
 				})
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOFee })
-
-				const supply = await token20.totalSupply()
-
-				await token20.transfer(metaSender.address, supply)
-
-				const prevERC20Balance = await token20.balanceOf(owner.address)
+				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass })
 
 				const [ prevBalance ] = await getBalances([owner])
 
-				expect( prevERC20Balance == 0)
-
 				expect( 
 
-					await metaSender.withdrawTxFee(token20.address)
+					await metaSender.withdrawTxFee()
 
-				).to.emit( owner.address,  supply )
-
-				const currERC20Balance = await token20.balanceOf(owner.address)
+				).to.emit( owner.address,  txFee.add( PALCOPass ) )
 
 				const [ currBalance ] = await getBalances([owner])
-
-				expect( currERC20Balance == supply)
 
 				expect( prevBalance < currBalance)
 
