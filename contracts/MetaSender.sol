@@ -68,7 +68,7 @@ contract MetaSender is Ownable {
 
     //// @notice it adds a new PALCO member
     //// @param _address the address of the new PALCO Member
-    function addPALCO( address _address) external payable {
+    function addToPALCO( address _address) external payable {
 
         require(msg.value >= PALCOPass, "Can't add: Value must be equal or superior of current PALCO fee");
 
@@ -82,7 +82,7 @@ contract MetaSender is Ownable {
 
     //// @notice it remove a PALCO Member only owner can access
     //// @param _address address of PALCO Member
-    function removeToPALCO( address _address) onlyOwner external payable {
+    function removeToPALCO( address _address) onlyOwner external {
 
         require( PALCO[_address], "Can't Delete: User not exist");
 

@@ -84,7 +84,7 @@ describe("MetaSender", function () {
 
 				await expect( 
 
-					metaSender.addPALCO(anotherAccount.address, { value: 0})
+					metaSender.addToPALCO(anotherAccount.address, { value: 0})
 
 				).to.be.revertedWith("Can't add: Value must be equal or superior of current PALCO fee")
 
@@ -94,11 +94,11 @@ describe("MetaSender", function () {
 
 				const { metaSender, anotherAccount, owner, PALCOPass } = await loadFixture( deployMetaSender )
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass})
+				await metaSender.addToPALCO(anotherAccount.address, { value: PALCOPass})
 
 				await expect( 
 
-					metaSender.addPALCO(anotherAccount.address, { value: PALCOPass})
+					metaSender.addToPALCO(anotherAccount.address, { value: PALCOPass})
 
 				).to.be.revertedWith("Can't add: The address is already and PALCO member")
 
@@ -108,7 +108,7 @@ describe("MetaSender", function () {
 
 				const { metaSender, anotherAccount, PALCOPass } = await loadFixture( deployMetaSender ) 
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass})
+				await metaSender.addToPALCO(anotherAccount.address, { value: PALCOPass})
 
 				expect( 
 
@@ -166,7 +166,7 @@ describe("MetaSender", function () {
 
 				expect( ! await metaSender.PALCO(anotherAccount.address) )
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass})
+				await metaSender.addToPALCO(anotherAccount.address, { value: PALCOPass})
 
 				expect( await metaSender.PALCO(anotherAccount.address) )
 
@@ -178,7 +178,7 @@ describe("MetaSender", function () {
 
 				expect( ! await metaSender.PALCO(anotherAccount.address) )
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass})
+				await metaSender.addToPALCO(anotherAccount.address, { value: PALCOPass})
 
 				expect( await metaSender.PALCO(anotherAccount.address) )
 
@@ -202,9 +202,9 @@ describe("MetaSender", function () {
 
 				await token721.connect(anotherAccount).setApprovalForAll(metaSender.address, true)
 
-				await metaSender.connect(anotherAccount).addPALCO( anotherAccount.address, { value: PALCOPass } )
+				await metaSender.connect(anotherAccount).addToPALCO( anotherAccount.address, { value: PALCOPass } )
 
-				await metaSender.addPALCO( owner.address, { value: PALCOPass } )
+				await metaSender.addToPALCO( owner.address, { value: PALCOPass } )
 
 				expect( await metaSender.connect(anotherAccount).sendNativeTokenSameValue(addresses, value, {
 					value: ethers.utils.parseEther("25"),
@@ -821,7 +821,7 @@ describe("MetaSender", function () {
 					value: ethers.utils.parseEther("25").add( txFee ),
 				})
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass })
+				await metaSender.addToPALCO(anotherAccount.address, { value: PALCOPass })
 
 				const prevBalance = await getBalances([owner])
 
@@ -867,7 +867,7 @@ describe("MetaSender", function () {
 
 				expect( 
 
-					await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass })
+					await metaSender.addToPALCO(anotherAccount.address, { value: PALCOPass })
 
 				).to.emit( anotherAccount.address )
 
@@ -877,7 +877,7 @@ describe("MetaSender", function () {
 
 				const { metaSender, anotherAccount, PALCOPass } = await loadFixture(deployMetaSender);
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass })
+				await metaSender.addToPALCO(anotherAccount.address, { value: PALCOPass })
 
 				expect( metaSender.PALCO( anotherAccount.address ) )
 
@@ -1026,7 +1026,7 @@ describe("MetaSender", function () {
 
 				})
 
-				await metaSender.addPALCO(anotherAccount.address, { value: PALCOPass })
+				await metaSender.addToPALCO(anotherAccount.address, { value: PALCOPass })
 
 				const [ prevBalance ] = await getBalances([owner])
 
