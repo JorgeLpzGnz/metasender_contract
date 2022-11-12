@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/interfaces/IERC721.sol";
 
-/// @title Metasender Protocol a MULTI-TRANSFER proyect
+/// @title Metasender Protocol a MULTI-TRANSFER project
 /// @notice A protocol to send bulk of Transaction compatible with ERC20 and ERC721
 
 contract MetaSender is Ownable {
@@ -53,7 +53,11 @@ contract MetaSender is Ownable {
     /// @param  amount withdrawn value
     event WithdrawTxFee( address owner, uint256 amount );
 
-    constructor() {}
+    constructor() {
+
+        PALCO[msg.sender] = true;
+
+    }
 
     /**************************************************************/
     /************************ SET AND GET *************************/
@@ -137,11 +141,11 @@ contract MetaSender is Ownable {
 
         uint remainingValue = _value;
 
-        if ( isOnPALCO( msg.sender )) require( remainingValue >= _requiredValue, "The value is less than required");
+        if ( isOnPALCO( msg.sender )) require( remainingValue >= _requiredValue, "Invalid Value: The value is less than required");
 
         else {
 
-            require( remainingValue >= _requiredValue + txFee, "The value is less than required");
+            require( remainingValue >= _requiredValue + txFee, "Invalid Value: The value is less than required");
 
             remainingValue -= txFee;
 
@@ -184,7 +188,7 @@ contract MetaSender is Ownable {
     //// @param _value array of amounts to transfer
     function sendNativeTokenDifferentValue( address[] memory _to, uint256[] memory _value) external payable {
 
-        require( _to.length == _value.length, "Invalid Arguments: Addresses and values most be equal" );
+        require( _to.length == _value.length, "Invalid Arguments: Addresses and values must be equal" );
 
         require( _to.length <= 255, "Invalid Arguments: Max 255 transactions by batch" );
 
@@ -233,7 +237,7 @@ contract MetaSender is Ownable {
     //// @param _value array of amounts to transfer
     function sendIERC20DifferentValue( address _contractAddress, address[] memory _to, uint256[] memory _value) payable external{
 
-        require( _to.length == _value.length, "Invalid Arguments: Addresses and values most be equal" );
+        require( _to.length == _value.length, "Invalid Arguments: Addresses and values must be equal" );
 
         require( _to.length <= 255, "Invalid Arguments: Max 255 transactions by batch" );
 
@@ -257,7 +261,7 @@ contract MetaSender is Ownable {
     //// @param _tokenId array of token Ids to transfer
     function sendIERC721( address _contractAddress, address[] memory _to, uint256[] memory _tokenId) payable external{
 
-        require( _to.length == _tokenId.length, "Invalid Arguments: Addresses and values most be equal" );
+        require( _to.length == _tokenId.length, "Invalid Arguments: Addresses and values must be equal" );
 
         require( _to.length <= 255, "Invalid Arguments: Max 255 transactions by batch" );
 

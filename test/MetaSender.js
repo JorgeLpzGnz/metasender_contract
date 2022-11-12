@@ -57,7 +57,7 @@ function getPrice(amounts) {
 describe("MetaSender", function () {
 
 	async function deployMetaSender() {
-		const [owner, anotherAccount] = await ethers.getSigners();
+		const [owner, anotherAccount, otherAcout] = await ethers.getSigners();
 
 		const MetaSender = await ethers.getContractFactory("MetaSender");
 		const metaSender = await MetaSender.deploy();
@@ -71,8 +71,28 @@ describe("MetaSender", function () {
 		const Token721 = await ethers.getContractFactory("Token721");
 		const token721 = await Token721.deploy();
 
-		return { metaSender, owner, anotherAccount, token20, token721, txFee, PALCOPass };
+		return { metaSender, owner, anotherAccount, token20, token721, txFee, PALCOPass, otherAcout };
 	}
+
+	describe("Constructor", () => {
+
+		describe("functionalities", () => {
+
+			it("should Add Owner To Palco", async () => {
+
+				const { metaSender, owner } = await loadFixture(deployMetaSender);
+
+				expect( 
+
+					expect( await metaSender.PALCO(owner.address) )
+
+				)
+
+			})
+
+		})
+
+	})
 
 	describe("PALCO List", () => {
 
@@ -120,35 +140,35 @@ describe("MetaSender", function () {
 
 			it("Should failed if a not PALCO doesn't pay fee", async () => {
 
-				const { metaSender, token20, token721 } = await loadFixture(deployMetaSender);
+				const { metaSender, token20, token721, anotherAccount } = await loadFixture(deployMetaSender);
 
 				const { addresses, amounts, tokenIds } = await getExample(25);
 
 				const value = ethers.utils.parseEther("1.0");
 
-				await expect( metaSender.sendNativeTokenSameValue(addresses, value, {
+				await expect( metaSender.connect(anotherAccount).sendNativeTokenSameValue(addresses, value, {
 					value: ethers.utils.parseEther("25"),
 				})).to.be.reverted
 
-				await expect( metaSender.sendNativeTokenDifferentValue(
+				await expect( metaSender.connect(anotherAccount).sendNativeTokenDifferentValue(
 					addresses,
 					amounts,
 					{ value: getPrice(amounts)}
 				)).to.be.reverted
 
-				await expect( metaSender.sendIERC20SameValue(
+				await expect( metaSender.connect(anotherAccount).sendIERC20SameValue(
 					token20.address,
 					addresses,
 					ethers.utils.parseEther('1')
 				)).to.be.reverted
 				
-				await expect( metaSender.sendIERC20DifferentValue(
+				await expect( metaSender.connect(anotherAccount).sendIERC20DifferentValue(
 					token20.address,
 					addresses,
 					amounts
 				)).to.be.reverted
 
-				await expect( metaSender.sendIERC721(
+				await expect( metaSender.connect(anotherAccount).sendIERC721(
 					token721.address,
 					addresses,
 					tokenIds
@@ -190,7 +210,7 @@ describe("MetaSender", function () {
 
 			it("should not charge the transaction fee for a PALCO", async () => {
 
-				const { metaSender, token20, token721, anotherAccount, PALCOPass, owner } = await loadFixture(deployMetaSender);
+				const { metaSender, token20, token721, anotherAccount, PALCOPass, otherAcout } = await loadFixture(deployMetaSender);
 
 				const { addresses, amounts, tokenIds } = await getExample(25);
 
@@ -204,7 +224,7 @@ describe("MetaSender", function () {
 
 				await metaSender.connect(anotherAccount).addToPALCO( anotherAccount.address, { value: PALCOPass } )
 
-				await metaSender.addToPALCO( owner.address, { value: PALCOPass } )
+				await metaSender.addToPALCO( otherAcout.address, { value: PALCOPass } )
 
 				expect( await metaSender.connect(anotherAccount).sendNativeTokenSameValue(addresses, value, {
 					value: ethers.utils.parseEther("25"),
@@ -332,7 +352,7 @@ describe("MetaSender", function () {
 					metaSender.sendNativeTokenSameValue(addresses, 10, {
 						value: ethers.utils.parseEther(`0`),
 					})
-				).to.be.revertedWith("The value is less than required");
+				).to.be.revertedWith("Invalid Value: The value is less than required");
 
 			});
 
@@ -421,7 +441,7 @@ describe("MetaSender", function () {
 							value: ethers.utils.parseEther(`2`).add( txFee ),
 						}
 					)
-				).to.be.revertedWith("Invalid Arguments: Addresses and values most be equal");
+				).to.be.revertedWith("Invalid Arguments: Addresses and values must be equal");
 			});
 
 			it("it should fail if is passed more than 255 wallets", async () => {
@@ -451,7 +471,7 @@ describe("MetaSender", function () {
 							value: getPrice(amounts).sub(2),
 						}
 					)
-				).to.be.revertedWith("The value is less than required");
+				).to.be.revertedWith("Invalid Value: The value is less than required");
 			});
 		});
 
@@ -539,17 +559,17 @@ describe("MetaSender", function () {
 
 			it("should failed if doesn't pass txfee", async() => {
 
-				const { metaSender, token20 } = await loadFixture( deployMetaSender )
+				const { metaSender, token20, anotherAccount } = await loadFixture( deployMetaSender )
 
 				const { addresses } = await getExample(255)
 
 				await token20.approve(metaSender.address, ethers.utils.parseEther('255'))
 
-				await expect( metaSender.sendIERC20SameValue(
+				await expect( metaSender.connect(anotherAccount).sendIERC20SameValue(
 					token20.address,
 					addresses,
 					ethers.utils.parseEther('1')
-				)).to.be.revertedWith("The value is less than required")
+				)).to.be.revertedWith("Invalid Value: The value is less than required")
 
 			})
 
@@ -623,17 +643,17 @@ describe("MetaSender", function () {
 
 			it("should failed if doesn't pass txfee", async() => {
 
-				const { metaSender, token20, txFee } = await loadFixture( deployMetaSender )
+				const { metaSender, token20, anotherAccount } = await loadFixture( deployMetaSender )
 
 				const { addresses, amounts } = await getExample(254)
 
 				await token20.approve(metaSender.address, ethers.utils.parseEther('400'))
 				
-				await expect( metaSender.sendIERC20DifferentValue(
+				await expect( metaSender.connect(anotherAccount).sendIERC20DifferentValue(
 					token20.address,
 					addresses,
 					amounts
-				)).to.be.revertedWith("The value is less than required")
+				)).to.be.revertedWith("Invalid Value: The value is less than required")
 
 			})
 
@@ -709,7 +729,7 @@ describe("MetaSender", function () {
 
 			it("should failed if doesn't pass txfee", async() => {
 
-				const { metaSender, token721, txFee } = await loadFixture( deployMetaSender )
+				const { metaSender, token721, anotherAccount } = await loadFixture( deployMetaSender )
 
 				const { addresses, tokenIds } = await getExample(254)
 
@@ -717,11 +737,11 @@ describe("MetaSender", function () {
 
 				await token721.setApprovalForAll(metaSender.address, true)
 
-				await expect( metaSender.sendIERC721(
+				await expect( metaSender.connect(anotherAccount).sendIERC721(
 					token721.address,
 					addresses,
 					tokenIds
-				)).to.be.revertedWith("The value is less than required")
+				)).to.be.revertedWith("Invalid Value: The value is less than required")
 
 			})
 
@@ -883,9 +903,10 @@ describe("MetaSender", function () {
 
 				expect( 
 
-					await metaSender.removeToPALCO(anotherAccount.address, { value: PALCOPass })
+					await metaSender.removeToPALCO(anotherAccount.address)
 
 				).to.emit( anotherAccount.address )
+
 			})
 
 			it("SetPALCOPass", async () => {
