@@ -64,7 +64,7 @@ contract MetaSender is Ownable {
 
     //// @notice returns a boolean
     //// @param _address the address of the required user
-    function isOnPALCO( address _address) private view returns (bool) {
+    function isOnPALCO( address _address) public view returns (bool) {
 
         return PALCO[ _address ];
 
@@ -76,7 +76,7 @@ contract MetaSender is Ownable {
 
         require(msg.value >= PALCOPass, "Can't add: Value must be equal or superior of current PALCO fee");
 
-        require( !PALCO[_address] , "Can't add: The address is already and PALCO member");
+        require( !PALCO[_address] , "Can't add: The address is already a PALCO member");
 
         PALCO[_address] = true;
 

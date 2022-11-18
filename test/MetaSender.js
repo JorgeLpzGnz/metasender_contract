@@ -120,7 +120,7 @@ describe("MetaSender", function () {
 
 					metaSender.addToPALCO(anotherAccount.address, { value: PALCOPass})
 
-				).to.be.revertedWith("Can't add: The address is already and PALCO member")
+				).to.be.revertedWith("Can't add: The address is already a PALCO member")
 
 			})
 
