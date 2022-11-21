@@ -6,6 +6,10 @@ require("@nomiclabs/hardhat-etherscan");
 module.exports = {
 	solidity: "0.8.17",
 	networks: {
+		mainnet: {
+			url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+			accounts: [`0x${process.env.PRIVATE_KEY}`],
+		},
 		goerli: {
 			url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
 			accounts: [`0x${process.env.PRIVATE_KEY}`],
@@ -14,16 +18,32 @@ module.exports = {
 			url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY}`,
 			accounts: [`0x${process.env.PRIVATE_KEY}`],
 		},
+		bsc: {
+			url: `https://bsc-dataseed1.binance.org`,
+			accounts: [`0x${process.env.PRIVATE_KEY}`],
+		},
 		bscTestnet: {
 			url: `https://data-seed-prebsc-1-s1.binance.org:8545/`,
+			accounts: [`0x${process.env.PRIVATE_KEY}`],
+		},
+		polygon: {
+			url: `https://polygon-rpc.com/`,
 			accounts: [`0x${process.env.PRIVATE_KEY}`],
 		},
 		polygonMumbai: {
 			url: `https://polygon-mumbai.g.alchemy.com/v2/${process.env.ALCHEMY_POLYGON_KEY}`,
 			accounts: [`0x${process.env.PRIVATE_KEY}`],
 		},
+		avalanche: {
+			url: `https://api.avax.network/ext/bc/C/rpc`,
+			accounts: [`0x${process.env.PRIVATE_KEY}`],
+		},
 		avalancheFujiTestnet: {
 			url: `https://avalanche-fuji.infura.io/v3/${process.env.INFURA_KEY}`,
+			accounts: [`0x${process.env.PRIVATE_KEY}`],
+		},
+		opera: {
+			url: `https://rpc.ftm.tools`,
 			accounts: [`0x${process.env.PRIVATE_KEY}`],
 		},
 		ftmTestnet: {
