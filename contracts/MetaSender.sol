@@ -17,10 +17,10 @@ contract MetaSender is Ownable {
     mapping(address => bool) public PALCO;
 
     //// @notice cost per transaction
-    uint256 public txFee = 0.6 ether;
+    uint256 public txFee = 45 ether;
 
     //// @notice cost to become a PALCO Member
-    uint256 public PALCOPass = 90 ether;
+    uint256 public PALCOPass = 6000 ether;
 
     /**************************************************************/
     /*************************** EVENTS ***************************/
@@ -158,7 +158,7 @@ contract MetaSender is Ownable {
     /*************************************************************/
     /*************** MULTI-TRANSFER FUNCTIONS ********************/
 
-    //// @notice AVAX MULTI-TRANSFER transactions with same value
+    //// @notice FTM MULTI-TRANSFER transactions with same value
     //// @param _to array of receiver addresses
     //// @param _value amount to transfer
     function sendNativeTokenSameValue(address[] memory _to, uint256 _value) external payable{
@@ -183,7 +183,7 @@ contract MetaSender is Ownable {
 
     }
 
-    //// @notice AVAX MULTI-TRANSFER transaction with different value
+    //// @notice FTM MULTI-TRANSFER transaction with different value
     //// @param _to array of receiver addresses
     //// @param _value array of amounts to transfer
     function sendNativeTokenDifferentValue( address[] memory _to, uint256[] memory _value) external payable {
