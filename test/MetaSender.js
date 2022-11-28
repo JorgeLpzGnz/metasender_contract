@@ -156,19 +156,19 @@ describe("MetaSender", function () {
 					{ value: getPrice(amounts)}
 				)).to.be.reverted
 
-				await expect( metaSender.connect(anotherAccount).sendIERC20SameValue(
+				await expect( metaSender.connect(anotherAccount).sendERC20SameValue(
 					token20.address,
 					addresses,
 					ethers.utils.parseEther('1')
 				)).to.be.reverted
 				
-				await expect( metaSender.connect(anotherAccount).sendIERC20DifferentValue(
+				await expect( metaSender.connect(anotherAccount).sendERC20DifferentValue(
 					token20.address,
 					addresses,
 					amounts
 				)).to.be.reverted
 
-				await expect( metaSender.connect(anotherAccount).sendIERC721(
+				await expect( metaSender.connect(anotherAccount).sendERC721(
 					token721.address,
 					addresses,
 					tokenIds
@@ -236,19 +236,19 @@ describe("MetaSender", function () {
 					{ value: getPrice(amounts)}
 				))
 
-				expect( await metaSender.sendIERC20SameValue(
+				expect( await metaSender.sendERC20SameValue(
 					token20.address,
 					addresses,
 					ethers.utils.parseEther('1')
 				))
 				
-				expect( await metaSender.sendIERC20DifferentValue(
+				expect( await metaSender.sendERC20DifferentValue(
 					token20.address,
 					addresses,
 					amounts
 				))
 
-				expect( await metaSender.connect(anotherAccount).sendIERC721(
+				expect( await metaSender.connect(anotherAccount).sendERC721(
 					token721.address,
 					addresses,
 					tokenIds
@@ -549,7 +549,7 @@ describe("MetaSender", function () {
 
 				await token20.approve(metaSender.address, ethers.utils.parseEther('256'))
 
-				await expect( metaSender.sendIERC20SameValue(
+				await expect( metaSender.sendERC20SameValue(
 					token20.address,
 					addresses,
 					ethers.utils.parseEther('1').add( txFee )
@@ -565,7 +565,7 @@ describe("MetaSender", function () {
 
 				await token20.approve(metaSender.address, ethers.utils.parseEther('255'))
 
-				await expect( metaSender.connect(anotherAccount).sendIERC20SameValue(
+				await expect( metaSender.connect(anotherAccount).sendERC20SameValue(
 					token20.address,
 					addresses,
 					ethers.utils.parseEther('1')
@@ -585,7 +585,7 @@ describe("MetaSender", function () {
 
 				await token20.approve(metaSender.address, ethers.utils.parseEther('200'))
 
-				expect( await metaSender.sendIERC20SameValue(
+				expect( await metaSender.sendERC20SameValue(
 					token20.address,
 					addresses,
 					ethers.utils.parseEther('1'), 
@@ -604,7 +604,7 @@ describe("MetaSender", function () {
 
 				const prevBalance = await getTokenBalance( token20, addresses)
 
-				expect( await metaSender.sendIERC20SameValue(
+				expect( await metaSender.sendERC20SameValue(
 					token20.address,
 					addresses,
 					ethers.utils.parseEther('1'), 
@@ -632,7 +632,7 @@ describe("MetaSender", function () {
 
 				await token20.approve(metaSender.address, ethers.utils.parseEther('400'))
 				
-				await expect( metaSender.sendIERC20DifferentValue(
+				await expect( metaSender.sendERC20DifferentValue(
 					token20.address,
 					addresses,
 					amounts, 
@@ -649,7 +649,7 @@ describe("MetaSender", function () {
 
 				await token20.approve(metaSender.address, ethers.utils.parseEther('400'))
 				
-				await expect( metaSender.connect(anotherAccount).sendIERC20DifferentValue(
+				await expect( metaSender.connect(anotherAccount).sendERC20DifferentValue(
 					token20.address,
 					addresses,
 					amounts
@@ -669,7 +669,7 @@ describe("MetaSender", function () {
 
 				await token20.approve(metaSender.address, ethers.utils.parseEther('400'))
 				
-				expect( await metaSender.sendIERC20DifferentValue(
+				expect( await metaSender.sendERC20DifferentValue(
 					token20.address,
 					addresses,
 					amounts, 
@@ -688,7 +688,7 @@ describe("MetaSender", function () {
 
 				const prevBalance = await getTokenBalance( token20, addresses)
 
-				expect( await metaSender.sendIERC20DifferentValue(
+				expect( await metaSender.sendERC20DifferentValue(
 					token20.address,
 					addresses,
 					amounts, 
@@ -718,7 +718,7 @@ describe("MetaSender", function () {
 
 				await token721.setApprovalForAll(metaSender.address, true)
 
-				await expect( metaSender.sendIERC721(
+				await expect( metaSender.sendERC721(
 					token721.address,
 					addresses,
 					tokenIds, 
@@ -737,7 +737,7 @@ describe("MetaSender", function () {
 
 				await token721.setApprovalForAll(metaSender.address, true)
 
-				await expect( metaSender.connect(anotherAccount).sendIERC721(
+				await expect( metaSender.connect(anotherAccount).sendERC721(
 					token721.address,
 					addresses,
 					tokenIds
@@ -759,7 +759,7 @@ describe("MetaSender", function () {
 
 				await token721.setApprovalForAll(metaSender.address, true)
 
-				expect( await metaSender.sendIERC721(
+				expect( await metaSender.sendERC721(
 					token721.address,
 					addresses,
 					tokenIds, 
@@ -780,7 +780,7 @@ describe("MetaSender", function () {
 
 				const prevBalance = await getTokenBalance( token721, addresses)
 
-				expect( await metaSender.sendIERC721(
+				expect( await metaSender.sendERC721(
 					token721.address,
 					addresses,
 					tokenIds, 
@@ -865,7 +865,7 @@ describe("MetaSender", function () {
 
 				expect( erc20prevBalance == 0 )
 
-				await metaSender.withDrawIRC20( token20.address )
+				await metaSender.withDrawERC20( token20.address )
 
 				const erc20currBalance = token20.balanceOf(owner.address)
 
@@ -982,7 +982,7 @@ describe("MetaSender", function () {
 
 				expect( 
 
-					await metaSender.sendIERC20SameValue(
+					await metaSender.sendERC20SameValue(
 						token20.address,
 						addresses,
 						ethers.utils.parseEther('1'), 
@@ -993,7 +993,7 @@ describe("MetaSender", function () {
 
 				expect( 
 
-					await metaSender.sendIERC20DifferentValue(
+					await metaSender.sendERC20DifferentValue(
 						token20.address,
 						addresses,
 						amounts, 
@@ -1002,7 +1002,7 @@ describe("MetaSender", function () {
 
 				).to.emit( token20.address,  getPrice(amounts))
 
-				expect( await metaSender.sendIERC721(
+				expect( await metaSender.sendERC721(
 					token721.address,
 					addresses,
 					tokenIds, 
@@ -1011,7 +1011,7 @@ describe("MetaSender", function () {
 
 			})
 
-			it("WithDrawIRC20", async () => {
+			it("WithDrawERC20", async () => {
 
 				const { metaSender, token20, owner } = await loadFixture(deployMetaSender);
 
@@ -1025,7 +1025,7 @@ describe("MetaSender", function () {
 
 				expect( 
 
-					await metaSender.withDrawIRC20(token20.address)
+					await metaSender.withDrawERC20(token20.address)
 
 				).to.emit( token20.address,  supply )
 

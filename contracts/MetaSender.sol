@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/interfaces/IERC721.sol";
 contract MetaSender is Ownable {
 
     /**************************************************************/
-    /******************** PALCO MEMBERS and FEEs ********************/
+    /****************** PALCO MEMBERS and FEEs ********************/
 
     //// @notice PALCO members ( free Transactions )
     mapping(address => bool) public PALCO;
@@ -47,7 +47,7 @@ contract MetaSender is Ownable {
 
     /// @param  contractAddress token contract address
     /// @param  amount withdraw amount
-    event WithDrawIRC20( address contractAddress, uint256 amount );
+    event WithDrawERC20( address contractAddress, uint256 amount );
 
     /// @param  owner owner address
     /// @param  amount withdrawn value
@@ -62,7 +62,7 @@ contract MetaSender is Ownable {
     /**************************************************************/
     /************************ SET AND GET *************************/
 
-    //// @notice returns a boolean
+    //// @notice it returns true if a user is on the palco
     //// @param _address the address of the required user
     function isOnPALCO( address _address) public view returns (bool) {
 
@@ -213,7 +213,7 @@ contract MetaSender is Ownable {
     //// @param _contractAddress Token contract address
     //// @param _to array of receiver addresses
     //// @param _value amount to transfer
-    function sendIERC20SameValue( address _contractAddress, address[] memory _to, uint256 _value) payable external{
+    function sendERC20SameValue( address _contractAddress, address[] memory _to, uint256 _value) payable external{
 
         require( _to.length <= 255, "Invalid Arguments: Max 255 transactions by batch" );
 
@@ -235,7 +235,7 @@ contract MetaSender is Ownable {
     //// @param _contractAddress Token contract address
     //// @param _to array of receiver addresses
     //// @param _value array of amounts to transfer
-    function sendIERC20DifferentValue( address _contractAddress, address[] memory _to, uint256[] memory _value) payable external{
+    function sendERC20DifferentValue( address _contractAddress, address[] memory _to, uint256[] memory _value) payable external{
 
         require( _to.length == _value.length, "Invalid Arguments: Addresses and values must be equal" );
 
@@ -259,7 +259,7 @@ contract MetaSender is Ownable {
     //// @param _contractAddress Token contract address
     //// @param _to array of receiver addresses
     //// @param _tokenId array of token Ids to transfer
-    function sendIERC721( address _contractAddress, address[] memory _to, uint256[] memory _tokenId) payable external{
+    function sendERC721( address _contractAddress, address[] memory _to, uint256[] memory _tokenId) payable external{
 
         require( _to.length == _tokenId.length, "Invalid Arguments: Addresses and values must be equal" );
 
@@ -284,7 +284,7 @@ contract MetaSender is Ownable {
 
     //// @notice withdraw a ERC20 tokens
     //// @param _address token contract address
-    function withDrawIRC20( address _address ) onlyOwner external  {
+    function withDrawERC20( address _address ) onlyOwner external  {
 
         IERC20 Token = IERC20( _address );
 
@@ -294,12 +294,11 @@ contract MetaSender is Ownable {
 
         Token.transfer(owner(), balance);
 
-        emit WithDrawIRC20( _address, balance );
+        emit WithDrawERC20( _address, balance );
 
     } 
 
-    //// @notice withdraw Fees and membership
-    //// @dev pass Zero Address if want to withdraw only ETH
+    //// @notice withdraw Fees and memberships
     function withdrawTxFee() onlyOwner external{
 
         uint256 balance = address(this).balance;
