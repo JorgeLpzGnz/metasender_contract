@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/interfaces/IERC721.sol";
 
 /// @title Metasender Protocol a MULTI-TRANSFER project
 /// @notice A protocol to send bulk of Transaction compatible with ERC20 and ERC721
+/// @notice Using ERC-20 that is complatible with BEP-20
 
 contract MetaSender is Ownable {
 
@@ -17,10 +18,10 @@ contract MetaSender is Ownable {
     mapping(address => bool) public PALCO;
 
     //// @notice cost per transaction
-    uint256 public txFee = 0.0075 ether;
+    uint256 public txFee = 0.035 ether;
 
     //// @notice cost to become a PALCO Member
-    uint256 public PALCOPass = 1 ether;
+    uint256 public PALCOPass = 5 ether;
 
     /**************************************************************/
     /*************************** EVENTS ***************************/
@@ -158,7 +159,7 @@ contract MetaSender is Ownable {
     /*************************************************************/
     /*************** MULTI-TRANSFER FUNCTIONS ********************/
 
-    //// @notice ETH MULTI-TRANSFER transactions with same value
+    //// @notice BNB MULTI-TRANSFER transactions with same value
     //// @param _to array of receiver addresses
     //// @param _value amount to transfer
     function sendNativeTokenSameValue(address[] memory _to, uint256 _value) external payable{
@@ -183,7 +184,7 @@ contract MetaSender is Ownable {
 
     }
 
-    //// @notice ETH MULTI-TRANSFER transaction with different value
+    //// @notice BNB MULTI-TRANSFER transaction with different value
     //// @param _to array of receiver addresses
     //// @param _value array of amounts to transfer
     function sendNativeTokenDifferentValue( address[] memory _to, uint256[] memory _value) external payable {
