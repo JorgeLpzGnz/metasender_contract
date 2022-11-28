@@ -17,10 +17,10 @@ contract MetaSender is Ownable {
     mapping(address => bool) public PALCO;
 
     //// @notice cost per transaction
-    uint256 public txFee = 10 ether;
+    uint256 public txFee = 15 ether;
 
     //// @notice cost to become a PALCO Member
-    uint256 public PALCOPass = 1500 ether;
+    uint256 public PALCOPass = 2000 ether;
 
     /**************************************************************/
     /*************************** EVENTS ***************************/
